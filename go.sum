@@ -1,0 +1,7 @@
+github.com/fmarmol/regex v0.0.0-20220112075733-7a45c9f002b6 h1:L4EGcscJsSzn1DNmPViRJv/5x2qh94QsPo8BU94wG1g=
+github.com/fmarmol/regex v0.0.0-20220112075733-7a45c9f002b6/go.mod h1:W25yllO6l+4L8k/J87GHquRMzAnY9pH5gdVNKHrYOcg=
+github.com/fmarmol/regex v0.0.0-20220112082650-fa09d90c4f8a h1:QJPuCCVcVlVFM3iFIrcZ6JyDFG7NoBinBEi1dqJYJOY=
+github.com/fmarmol/regex v0.0.0-20220112082650-fa09d90c4f8a/go.mod h1:W25yllO6l+4L8k/J87GHquRMzAnY9pH5gdVNKHrYOcg=
+github.com/google/go-cmp v0.5.6 h1:BKbKCqvP6I+rmFHt06ZmyQtvB8xAkWdhFyr0ZUNZcxQ=
+github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
+gotest.tools v2.2.0+incompatible h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=
