@@ -1,29 +1,45 @@
 package main
 
 import (
-	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/fmarmol/regex"
+	"github.com/fmarmol/tuple"
 )
-
-func Panic(s string, args ...interface{}) {
-	err := fmt.Errorf(s, args...)
-	panic(err)
-}
 
 type Rule struct {
 	kind    InstKind
-	pattern *regexp.Regexp
+	pattern string
+	re      *regexp.Regexp
 }
 
-var pattern = regexp.MustCompile(`^(?P<inst>[[:alpha:]]+)( (?P<operand>\d+))?`)
+func loadRules() []*Rule {
+	var rules = []*Rule{
+		{kind: Inst_Com, pattern: `^(?P<com>//.*)`},
+		{kind: Inst_Label, pattern: `^(?P<label>[[:alpha:]]+):`},
+		{kind: Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:alpha:]]+)`},
+		{kind: Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:alpha:]]+)`},
+		{kind: Inst_Push, pattern: `^push\s+(?P<operand>\d+)`},
+		{kind: Inst_Dup, pattern: `^dup\s+(?P<operand>\d+)`},
+		{kind: Inst_Add, pattern: `^(?P<inst>add)`},
+		{kind: Inst_Sub, pattern: `^(?P<inst>sub)`},
+		{kind: Inst_Print, pattern: `(?P<inst>^print)`},
+		{kind: Inst_Halt, pattern: `^(?P<inst>halt)`},
+	}
+	for _, r := range rules {
+		r.re = regexp.MustCompile(r.pattern)
+	}
+	return rules
+
+}
 
 func loadSourceCode(code string) *Program {
+	labels := map[string]uint{}
 
-	ret := []Inst{}
+	instsToResolve := []tuple.Tuple2[string, uint]{}
+
+	var p Program
 
 	lines := strings.Split(code, "\n")
 	lines = func() (ret []string) {
@@ -37,57 +53,77 @@ func loadSourceCode(code string) *Program {
 		return
 	}()
 
-	for _, line := range lines {
-		groups := regex.FindGroups(pattern, line)
-		if len(groups) == 0 {
-			Panic("Cannot parse line: %v", line)
-		}
-
-		inst := groups.MustGet("inst")
-		operand, ok := groups.Get("operand")
-
+LINE:
+	for ip, line := range lines {
 		var newInst Inst
-		// no operand
-		if ok {
-			o, err := strconv.Atoi(operand)
-			if err != nil {
-				Panic("operand %q is not a number", operand)
+		var found bool
+		for _, rule := range loadRules() {
+			groups := regex.FindGroups(rule.re, line)
+			if len(groups) == 0 {
+				continue
 			}
-			op := int64(o)
-			switch inst {
-			case "push":
-				newInst = Push(op)
-			case "jmp":
-				newInst = Jmp(op)
-			case "jmptrue":
-				newInst = JmpTrue(op)
-			case "dup":
-				newInst = Dup(op)
+			found = true
+			switch rule.kind {
+			case Inst_Com:
+				continue LINE
+			case Inst_Label:
+				label := groups.MustGet("label")
+
+				_, ok := labels[label]
+				if ok {
+					Panic("label %v already defined", label)
+				}
+				labels[label] = uint(ip)
+				newInst = Label(int64(ip))
+			case Inst_Push:
+				op := groups.MustGetAsInt("operand")
+				newInst = Push(int64(op))
+			case Inst_Dup:
+				op := groups.MustGetAsInt("operand")
+				newInst = Dup(int64(op))
+			case Inst_Jmp:
+				label := groups.MustGet("label")
+
+				addr, ok := labels[label]
+				if !ok {
+					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
+				}
+				newInst = Jmp(int64(addr))
+			case Inst_JmpTrue:
+				label := groups.MustGet("label")
+
+				addr, ok := labels[label]
+				if !ok {
+					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
+				}
+				newInst = JmpTrue(int64(addr))
+			case Inst_Add:
+				newInst = Add
+			case Inst_Sub:
+				newInst = Sub
+			case Inst_Halt:
+				newInst = Halt
+			case Inst_Print:
+				newInst = Print
 			default:
-				Panic("unknow instruction %q", inst)
+				Panic("Unkwon instruction line: %v", line)
 			}
 
-		} else {
-			switch inst {
-			case "add":
-				newInst = Add
-			case "sub":
-				newInst = Sub
-			case "mul":
-				newInst = Mul
-			case "div":
-				newInst = Div
-			case "print":
-				newInst = Print
-			case "halt":
-				newInst = Halt
-			case "eq":
-				newInst = Eq
-			default:
-				Panic("unknow instruction %v", inst)
-			}
+			p = append(p, newInst)
+			continue LINE
 		}
-		ret = append(ret, newInst)
+		if !found {
+			Panic("could not parse line: %v", line)
+		}
 	}
-	return &ret
+
+	for _, inst := range instsToResolve {
+		res, ok := labels[inst.First]
+		if !ok {
+			Panic("Label %q is not defined", inst.First)
+		}
+		p[inst.Second].Operand = int64(res)
+	}
+
+	return &p
 }

@@ -1,8 +1,0 @@
-push 0
-push 1
-dup 2
-dup 2
-add
-print
-jmp 2
-halt

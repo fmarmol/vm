@@ -1,0 +1,10 @@
+// fibonnaci suite
+push 0
+push 1
+loop:
+    dup 2
+    dup 2
+    add
+    print
+    jmp loop
+    halt

@@ -1,0 +1,10 @@
+push 10
+print
+loop:
+    push 1
+    sub
+    print
+    jmptrue loop
+    halt
+    
+

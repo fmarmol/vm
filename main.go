@@ -5,8 +5,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"unsafe"
+
+	"github.com/fmarmol/basename/pkg/basename"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
+
+func Panic(s string, args ...interface{}) {
+	err := fmt.Errorf(s, args...)
+	panic(err)
+}
 
 type VM struct {
 	stack   []int64
@@ -19,8 +28,13 @@ type VM struct {
 }
 
 const PROGRAM_CAPACITY = 512
+const STACK_CAPACITY = 100
 
-type Program = []Inst
+type Program []Inst
+
+func (p *Program) Size() int64 {
+	return int64(len(*p))
+}
 
 func NewVM(size uint, program *Program) *VM {
 	return &VM{
@@ -37,8 +51,6 @@ type Inst struct {
 	Operand int64
 }
 
-const HALT_VALUE = 0x12345
-
 const (
 	Inst_Push InstKind = iota
 	Inst_Add
@@ -51,6 +63,8 @@ const (
 	Inst_JmpTrue
 	Inst_Dup
 	Inst_Print
+	Inst_Label
+	Inst_Com
 	Inst_Count
 )
 
@@ -75,6 +89,7 @@ var (
 	Jmp     = NewInst(Inst_Jmp)     // Jmp at a position of the program
 	JmpTrue = NewInst(Inst_JmpTrue) // Jump if top value of the stack != 0 at the position of the program
 	Dup     = NewInst(Inst_Dup)     // Duplicate the value at the relative position in stack at the top of the stack
+	Label   = NewInst(Inst_Label)
 )
 
 func (ik InstKind) String() string {
@@ -101,21 +116,26 @@ func (ik InstKind) String() string {
 		return "DUP"
 	case Inst_Print:
 		return "PRINT"
+	case Inst_Label:
+		return "LABEL"
+	case Inst_Com:
+		return "COMMENT"
 	default:
-		panic(fmt.Errorf("InstKind unkown human representation of error: %d", ik))
+		Panic("InstKind unkown human representation of error: %d", ik)
 	}
-
+	return ""
 }
 
 func (i Inst) String() string {
 	switch i.Kind {
-	case Inst_Push, Inst_Jmp, Inst_JmpTrue, Inst_Dup:
+	case Inst_Push, Inst_Jmp, Inst_JmpTrue, Inst_Dup, Inst_Label:
 		return fmt.Sprintf("%v[%v]", i.Kind, i.Operand)
 	case Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print:
 		return fmt.Sprintf("%v", i.Kind)
 	default:
-		panic(fmt.Errorf("Inst unkown human representation of error: %d", i.Kind))
+		Panic("Inst unkown human representation of error: %d", i.Kind)
 	}
+	return ""
 }
 
 type Err int
@@ -144,8 +164,9 @@ func (e Err) String() string {
 	case Err_OutOfIndexInstruction:
 		return "Out Of Index Instruction"
 	default:
-		panic(fmt.Errorf("Err unkown human representation of error: %d", e))
+		Panic("Err unkown human representation of error: %d", e)
 	}
+	return ""
 }
 
 func (v *VM) executeInst(inst Inst) (err Err) {
@@ -173,14 +194,14 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 	case Inst_Halt:
 		v.stop = true
 	case Inst_Jmp:
-		if inst.Operand < 0 || inst.Operand >= int64(len(*v.program)) {
+		if inst.Operand < 0 || inst.Operand >= v.program.Size() {
 			err = Err_OutOfIndexInstruction
 		} else {
 
 			v.ip = uint(inst.Operand)
 		}
 	case Inst_JmpTrue:
-		if inst.Operand < 0 || inst.Operand >= int64(len(*v.program)) {
+		if inst.Operand < 0 || inst.Operand >= v.program.Size() {
 			err = Err_OutOfIndexInstruction
 		} else if v.stack[v.sp-1] != 0 {
 			v.ip = uint(inst.Operand)
@@ -198,6 +219,8 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 	case Inst_Print:
 		fmt.Println(v.stack[v.sp-1])
 		v.ip++
+	case Inst_Label:
+		v.ip++
 	default:
 		err = Err_IllegalInstruction
 	}
@@ -211,24 +234,15 @@ func (v *VM) dump() {
 	}
 }
 
-// func NewProgram(insts ...Inst) *Program {
-// 	i := 0
-// 	ret := new(Program)
-// 	for _, inst := range insts {
-// 		(*ret)[i] = inst
-// 		i++
-// 	}
-// 	fmt.Println(*ret)
-// 	return ret
-// }
-
 func NewProgram(insts ...Inst) *Program {
 	ret := make([]Inst, 0, len(insts))
 	for _, inst := range insts {
 		ret = append(ret, inst)
 	}
-	return &ret
+	p := Program(ret)
+	return &p
 }
+
 func (v *VM) execute() {
 	counter := 0
 	for !v.stop && counter < 100 {
@@ -236,7 +250,7 @@ func (v *VM) execute() {
 		// fmt.Printf("inst=%v,ip=%v, sp=%v\n", inst, v.ip, v.sp)
 		err := v.executeInst(inst)
 		if err != OK {
-			panic(err)
+			Panic("Inst: %v, Err: %v", inst.String(), err.String())
 		}
 		// v.dump()
 		counter++
@@ -267,34 +281,57 @@ func LoadProgram(pathFile string) (*Program, error) {
 	}
 	sizeFile := fi.Size()
 
-	fmt.Println(unsafe.Sizeof(uintptr(0)))
-	fmt.Println(unsafe.Sizeof(int64(0)))
-
-	p := make([]Inst, sizeFile/sizeInst, sizeFile/sizeInst)
+	p := Program(make([]Inst, sizeFile/sizeInst, sizeFile/sizeInst))
 	err = binary.Read(fd, binary.BigEndian, &p)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(p)
 	return &p, nil
 }
 
-func main() {
+var (
+	app    = kingpin.New("vm", "vm main command")
+	comp   = app.Command("compile", "compile a .evm file")
+	source = comp.Arg("source", "source file").String()
+	output = comp.Flag("output", "output file .vm").Short('o').String()
 
-	code, err := ioutil.ReadFile("./toto.evm")
-	if err != nil {
-		Panic("could not read file: %v", err)
+	run       = app.Command("run", "run vm file")
+	sourceRun = run.Arg("source", "source file .vm").String()
+
+	disas       = app.Command("disas", "disassemble a program .vm")
+	sourceDisas = disas.Arg("source", "source file .vm").String()
+)
+
+func main() {
+	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+
+	case comp.FullCommand():
+		fi := basename.ParseFile(*source)
+		code, err := ioutil.ReadFile(*source)
+		if err != nil {
+			Panic("could not read file: %v", err)
+		}
+		p := loadSourceCode(string(code))
+		vm := NewVM(PROGRAM_CAPACITY, p)
+		err = vm.WriteToFile(filepath.Join(fi.Dir, fi.Basename) + ".vm")
+		if err != nil {
+			panic(err)
+		}
+	case run.FullCommand():
+		p, err := LoadProgram(*sourceRun)
+		if err != nil {
+			panic(err)
+		}
+		vm := NewVM(PROGRAM_CAPACITY, p)
+		vm.execute()
+	case disas.FullCommand():
+		p, err := LoadProgram(*sourceDisas)
+		if err != nil {
+			panic(err)
+		}
+		for _, inst := range *p {
+			fmt.Println(inst)
+		}
 	}
 
-	p := loadSourceCode(string(code))
-	// p, err := LoadProgram("./toto.vm")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	vm := NewVM(512, p)
-	vm.execute()
-	// err := vm.WriteToFile("./toto.vm")
-	// if err != nil {
-	// 	panic(err)
-	// }
 }
