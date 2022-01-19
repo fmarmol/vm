@@ -17,9 +17,9 @@ type Rule struct {
 func loadRules() []*Rule {
 	var rules = []*Rule{
 		{kind: Inst_Com, pattern: `^(?P<com>//.*)`},
-		{kind: Inst_Label, pattern: `^(?P<label>[[:alpha:]]+):`},
-		{kind: Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:alpha:]]+)`},
-		{kind: Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:alpha:]]+)`},
+		{kind: Inst_Label, pattern: `^(?P<label>[[:word:]]+):`},
+		{kind: Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:word:]]+)`},
+		{kind: Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:word:]]+)`},
 		{kind: Inst_Push, pattern: `^push\s+(?P<operand>\d+)`},
 		{kind: Inst_Dup, pattern: `^dup\s+(?P<operand>\d+)`},
 		{kind: Inst_Add, pattern: `^(?P<inst>add)`},

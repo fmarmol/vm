@@ -95,33 +95,33 @@ var (
 func (ik InstKind) String() string {
 	switch ik {
 	case Inst_Push:
-		return "PUSH"
+		return "push"
 	case Inst_Add:
-		return "ADD"
+		return "add"
 	case Inst_Sub:
-		return "SUB"
+		return "sub"
 	case Inst_Mul:
-		return "MUL"
+		return "mul"
 	case Inst_Div:
-		return "DIV"
+		return "div"
 	case Inst_Eq:
-		return "EQ"
+		return "eq"
 	case Inst_Halt:
-		return "HALT"
+		return "halt"
 	case Inst_Jmp:
-		return "JMP"
+		return "jmp"
 	case Inst_JmpTrue:
-		return "JMP_TRUE"
+		return "jmptrue"
 	case Inst_Dup:
-		return "DUP"
+		return "dup"
 	case Inst_Print:
-		return "PRINT"
+		return "print"
 	case Inst_Label:
-		return "LABEL"
+		return "label"
 	case Inst_Com:
-		return "COMMENT"
+		return "comment"
 	default:
-		Panic("InstKind unkown human representation of error: %d", ik)
+		Panic("InstKind unknown human representation of error: %d", ik)
 	}
 	return ""
 }
@@ -129,11 +129,11 @@ func (ik InstKind) String() string {
 func (i Inst) String() string {
 	switch i.Kind {
 	case Inst_Push, Inst_Jmp, Inst_JmpTrue, Inst_Dup, Inst_Label:
-		return fmt.Sprintf("%v[%v]", i.Kind, i.Operand)
+		return fmt.Sprintf("%v %v", i.Kind, i.Operand)
 	case Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print:
 		return fmt.Sprintf("%v", i.Kind)
 	default:
-		Panic("Inst unkown human representation of error: %d", i.Kind)
+		Panic("Inst unknown human representation of error: %d", i.Kind)
 	}
 	return ""
 }
@@ -325,13 +325,14 @@ func main() {
 		vm := NewVM(PROGRAM_CAPACITY, p)
 		vm.execute()
 	case disas.FullCommand():
+		// TODO: disasembly output should be able to be input for compile command
 		p, err := LoadProgram(*sourceDisas)
 		if err != nil {
 			panic(err)
 		}
-		for _, inst := range *p {
+		ps := p.disas()
+		for _, inst := range ps {
 			fmt.Println(inst)
 		}
 	}
-
 }
