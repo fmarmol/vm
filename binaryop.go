@@ -1,6 +1,10 @@
 package main
 
-func binaryOp(arg1 int64, arg2 int64, ik InstKind) (ret int64, err Err) {
+type Number interface {
+	~uint32 | ~int64 | ~float64
+}
+
+func binaryOp[T Number](arg1 T, arg2 T, ik InstKind) (ret T, err Err) {
 	switch ik {
 	case Inst_Add:
 		ret = arg1 + arg2

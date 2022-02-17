@@ -3,8 +3,8 @@ package main
 import "testing"
 
 func TestParse(t *testing.T) {
-	code := `push 3
-	push 2
+	code := `pushi 3
+	pushi 2
 	add
 	`
 	loadSourceCode(code)

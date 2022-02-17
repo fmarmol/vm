@@ -1,8 +1,8 @@
-push 10
+pushi 10
 print #print first 
 jmp loop
 loop:
-    push 1
+    pushi 1
     sub
     print
     jmptrue loop

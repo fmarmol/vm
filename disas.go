@@ -5,15 +5,18 @@ import (
 )
 
 func (p *Program) disas() (ret []string) {
-	labels := map[int64]string{}
+	labels := map[Word]string{}
 	indexToResolve := map[int64]Inst{}
 
-	for ip, inst := range *p {
+	var ip int64
+
+	for _, inst := range *p {
 		switch inst.Kind {
 		case Inst_Label:
 			labelName := fmt.Sprintf("__label_%d", ip)
-			labels[int64(ip)] = labelName
+			labels[NewWord(ip, Int64)] = labelName
 			ret = append(ret, labelName+":")
+			fmt.Println(ret)
 		case Inst_Jmp, Inst_JmpTrue:
 			//check if addres is saved in labels:
 			_, ok := labels[inst.Operand]
@@ -26,6 +29,7 @@ func (p *Program) disas() (ret []string) {
 		default:
 			ret = append(ret, fmt.Sprintf("%v", inst))
 		}
+		ip++
 	}
 
 	for index, inst := range indexToResolve {
@@ -35,7 +39,7 @@ func (p *Program) disas() (ret []string) {
 			if !ok {
 				Panic("resolution of inst %v failed. Could not find labels at addr %v", inst, inst.Operand)
 			}
-			ret[index] = fmt.Sprintf("%v %s", inst.Kind, labels[inst.Operand])
+			ret[index] = fmt.Sprintf("%v %v", inst.Kind, labels[inst.Operand])
 		default:
 			Panic("inst %v resolution is not implemented", inst)
 		}
