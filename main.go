@@ -183,15 +183,6 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 			v.sp++
 			v.ip++
 		}
-	// case Inst_PushFloat:
-	// 	if v.sp >= v.maxSize {
-	// 		err = Err_Overflow
-	// 	} else {
-	// 		v.stack[v.sp] = inst.Operand
-	// 		v.sp++
-	// 		v.ip++
-	// 	}
-
 	case Inst_Add, Inst_Sub, Inst_Mul, Inst_Div, Inst_Eq:
 		if len(v.stack) < 2 {
 			err = Err_Underflow
@@ -275,9 +266,9 @@ func NewProgram(insts ...Inst) *Program {
 	return &p
 }
 
-func (v *VM) execute() {
-	counter := 0
-	for !v.stop && counter < 300 {
+func (v *VM) execute(maxStep uint) {
+	var counter uint
+	for !v.stop && counter < maxStep {
 		inst := (*v.program)[v.ip]
 		// fmt.Printf("inst=%v,ip=%v, sp=%v\n", inst, v.ip, v.sp)
 		err := v.executeInst(inst)
@@ -330,6 +321,7 @@ var (
 
 	run       = app.Command("run", "run vm file")
 	sourceRun = run.Arg("source", "source file .vm").String()
+	maxStep   = run.Flag("max_step", "max exection steps allowed").Default("300").Uint()
 
 	disas       = app.Command("disas", "disassemble a program .vm")
 	sourceDisas = disas.Arg("source", "source file .vm").String()
@@ -357,7 +349,7 @@ func main() {
 			panic(err)
 		}
 		vm := NewVM(PROGRAM_CAPACITY, p)
-		vm.execute()
+		vm.execute(*maxStep)
 	case disas.FullCommand():
 		// TODO: disasembly output should be able to be input for compile command
 		p, err := LoadProgram(*sourceDisas)
