@@ -23,6 +23,8 @@ func loadRules() []*Rule {
 		{kind: Inst_PushInt, pattern: `^pushi\s+(?P<operand>\d+)`},
 		{kind: Inst_PushFloat, pattern: `^pushf\s+(?P<operand>[0-9]+.[0-9]*)`},
 		{kind: Inst_Dup, pattern: `^dup\s+(?P<operand>\d+)`},
+		{kind: Inst_Swap, pattern: `^(?P<inst>swap)`},
+		{kind: Inst_Drop, pattern: `^(?P<inst>drop)`},
 		{kind: Inst_Add, pattern: `^(?P<inst>add)`},
 		{kind: Inst_Sub, pattern: `^(?P<inst>sub)`},
 		{kind: Inst_Print, pattern: `(?P<inst>^print)`},
@@ -104,6 +106,10 @@ LINE:
 					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
 				}
 				newInst = JmpTrue(NewWord(addr, UInt32))
+			case Inst_Swap:
+				newInst = Swap
+			case Inst_Drop:
+				newInst = Drop
 			case Inst_Add:
 				newInst = Add
 			case Inst_Sub:

@@ -63,6 +63,8 @@ const (
 	Inst_Jmp
 	Inst_JmpTrue
 	Inst_Dup
+	Inst_Swap
+	Inst_Drop
 	Inst_Print
 	Inst_Label
 	Inst_Com
@@ -84,6 +86,8 @@ var (
 	Print = Inst{Kind: Inst_Print} // print the value at the top of the stack
 	Halt  = Inst{Kind: Inst_Halt}  // stop the vm
 	Eq    = Inst{Kind: Inst_Eq}    // check if last 2 values are equal and but 1 or 0 at the top
+	Swap  = Inst{Kind: Inst_Swap}  //  swap the 2 top values on the stack
+	Drop  = Inst{Kind: Inst_Drop}  // remove value at the top of the stack
 
 	//operand
 	PushInt   = NewInst(Inst_PushInt)   // push integer at the top of the stack
@@ -118,6 +122,10 @@ func (ik InstKind) String() string {
 		return "jmptrue"
 	case Inst_Dup:
 		return "dup"
+	case Inst_Swap:
+		return "swap"
+	case Inst_Drop:
+		return "drop"
 	case Inst_Print:
 		return "print"
 	case Inst_Label:
@@ -134,7 +142,7 @@ func (i Inst) String() string {
 	switch i.Kind {
 	case Inst_PushInt, Inst_PushFloat, Inst_Jmp, Inst_JmpTrue, Inst_Dup, Inst_Label:
 		return fmt.Sprintf("%v %v", i.Kind, i.Operand)
-	case Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print:
+	case Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print, Inst_Swap, Inst_Drop:
 		return fmt.Sprintf("%v", i.Kind)
 	default:
 		Panic("Inst unknown human representation of error: %d", i.Kind)
@@ -214,7 +222,13 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 		v.stack[v.sp-1] = Word{}
 		v.sp--
 		v.ip++
-
+	case Inst_Swap:
+		v.stack[v.sp-2], v.stack[v.sp-1] = v.stack[v.sp-1], v.stack[v.sp-2]
+		v.ip++
+	case Inst_Drop:
+		v.stack[v.sp-1] = Word{}
+		v.sp--
+		v.ip++
 	case Inst_Halt:
 		v.stop = true
 	case Inst_Jmp:
@@ -270,7 +284,7 @@ func (v *VM) execute(maxStep uint) {
 	var counter uint
 	for !v.stop && counter < maxStep {
 		inst := (*v.program)[v.ip]
-		// fmt.Printf("inst=%v,ip=%v, sp=%v\n", inst, v.ip, v.sp)
+		fmt.Printf("inst=%v,ip=%v, sp=%v\n", inst, v.ip, v.sp)
 		err := v.executeInst(inst)
 		if err != OK {
 			Panic("Inst: %v, Err: %v", inst.String(), err.String())
