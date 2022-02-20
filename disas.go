@@ -10,13 +10,14 @@ func (p *Program) disas() (ret []string) {
 
 	var ip int64
 
+	fmt.Println("number of instructions:", len(*p))
+
 	for _, inst := range *p {
 		switch inst.Kind {
 		case Inst_Label:
 			labelName := fmt.Sprintf("__label_%d", ip)
-			labels[NewWord(ip, Int64)] = labelName
+			labels[inst.Operand] = labelName
 			ret = append(ret, labelName+":")
-			fmt.Println(ret)
 		case Inst_Jmp, Inst_JmpTrue:
 			//check if addres is saved in labels:
 			_, ok := labels[inst.Operand]
@@ -31,6 +32,8 @@ func (p *Program) disas() (ret []string) {
 		}
 		ip++
 	}
+	fmt.Println(ret)
+	fmt.Println(labels)
 
 	for index, inst := range indexToResolve {
 		switch inst.Kind {

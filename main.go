@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"unsafe"
 
 	"github.com/fmarmol/basename/pkg/basename"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -36,6 +35,7 @@ func (p *Program) Size() uint32 {
 	return uint32(len(*p))
 }
 
+// size is the max size of the stack
 func NewVM(size uint32, program *Program) *VM {
 	return &VM{
 		stack:   make([]Word, size, size),
@@ -175,7 +175,7 @@ func (e Err) String() string {
 
 func (v *VM) executeInst(inst Inst) (err Err) {
 	switch inst.Kind {
-	case Inst_PushInt:
+	case Inst_PushInt, Inst_PushFloat:
 		if v.sp >= v.maxSize {
 			err = Err_Overflow
 		} else {
@@ -183,6 +183,15 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 			v.sp++
 			v.ip++
 		}
+	// case Inst_PushFloat:
+	// 	if v.sp >= v.maxSize {
+	// 		err = Err_Overflow
+	// 	} else {
+	// 		v.stack[v.sp] = inst.Operand
+	// 		v.sp++
+	// 		v.ip++
+	// 	}
+
 	case Inst_Add, Inst_Sub, Inst_Mul, Inst_Div, Inst_Eq:
 		if len(v.stack) < 2 {
 			err = Err_Underflow
@@ -226,7 +235,7 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 	case Inst_JmpTrue:
 		if inst.Operand.UInt32() < 0 || inst.Operand.UInt32() >= v.program.Size() {
 			err = Err_OutOfIndexInstruction
-		} else if v.stack[v.sp-1].UInt32() != 0 {
+		} else if !v.stack[v.sp-1].IsZero() {
 			v.ip = inst.Operand.UInt32()
 		} else {
 			v.ip++
@@ -268,7 +277,7 @@ func NewProgram(insts ...Inst) *Program {
 
 func (v *VM) execute() {
 	counter := 0
-	for !v.stop && counter < 100 {
+	for !v.stop && counter < 300 {
 		inst := (*v.program)[v.ip]
 		// fmt.Printf("inst=%v,ip=%v, sp=%v\n", inst, v.ip, v.sp)
 		err := v.executeInst(inst)
@@ -278,6 +287,7 @@ func (v *VM) execute() {
 		// v.dump()
 		counter++
 	}
+	fmt.Println("number of execution steps:", counter)
 }
 
 func (v *VM) WriteToFile(pathFile string) error {
@@ -286,7 +296,7 @@ func (v *VM) WriteToFile(pathFile string) error {
 		return err
 	}
 	defer fd.Close()
-	return binary.Write(fd, binary.BigEndian, v.program)
+	return binary.Write(fd, binary.BigEndian, *v.program)
 }
 
 func LoadProgram(pathFile string) (*Program, error) {
@@ -296,7 +306,7 @@ func LoadProgram(pathFile string) (*Program, error) {
 	}
 	defer fd.Close()
 
-	sizeInst := int64(unsafe.Sizeof(Inst{}))
+	sizeInst := int64(binary.Size(Inst{}))
 
 	fi, err := fd.Stat()
 	if err != nil {

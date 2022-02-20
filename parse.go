@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -22,7 +21,7 @@ func loadRules() []*Rule {
 		{kind: Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:word:]]+)`},
 		{kind: Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:word:]]+)`},
 		{kind: Inst_PushInt, pattern: `^pushi\s+(?P<operand>\d+)`},
-		{kind: Inst_PushFloat, pattern: `^pushf\s+(?P<operand>\d+)`},
+		{kind: Inst_PushFloat, pattern: `^pushf\s+(?P<operand>[0-9]+.[0-9]*)`},
 		{kind: Inst_Dup, pattern: `^dup\s+(?P<operand>\d+)`},
 		{kind: Inst_Add, pattern: `^(?P<inst>add)`},
 		{kind: Inst_Sub, pattern: `^(?P<inst>sub)`},
@@ -88,7 +87,7 @@ LINE:
 				newInst = PushFloat(NewWord(op, Float64))
 			case Inst_Dup:
 				op := groups.MustGetAsInt("operand")
-				newInst = Dup(NewWord(int64(op), Int64))
+				newInst = Dup(NewWord(int64(op), UInt32))
 			case Inst_Jmp:
 				label := groups.MustGet("label")
 
@@ -96,7 +95,7 @@ LINE:
 				if !ok {
 					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
 				}
-				newInst = Jmp(NewWord(addr, Int64))
+				newInst = Jmp(NewWord(addr, UInt32))
 			case Inst_JmpTrue:
 				label := groups.MustGet("label")
 
@@ -104,7 +103,7 @@ LINE:
 				if !ok {
 					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
 				}
-				newInst = JmpTrue(NewWord(addr, Int64))
+				newInst = JmpTrue(NewWord(addr, UInt32))
 			case Inst_Add:
 				newInst = Add
 			case Inst_Sub:
@@ -131,10 +130,6 @@ LINE:
 			Panic("Label %q is not defined", inst.First)
 		}
 		p[inst.Second].Operand = NewWord(res, UInt32)
-	}
-
-	for _, inst := range p {
-		fmt.Println(inst)
 	}
 
 	return &p

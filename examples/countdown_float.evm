@@ -1,0 +1,9 @@
+pushf 20
+print #print first 
+jmp loop
+loop:
+    pushf 0.5
+    sub
+    print
+    jmptrue loop
+    halt

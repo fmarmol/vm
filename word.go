@@ -13,9 +13,22 @@ const (
 	UInt32
 )
 
+func (w WordKind) String() string {
+	switch w {
+	case Int64:
+		return "int64"
+	case Float64:
+		return "float64"
+	case UInt32:
+		return "uint32"
+	default:
+		panic(fmt.Errorf("unknown human representation fo WordKind %d", w))
+	}
+}
+
 type Word struct {
-	Kind  WordKind
 	Value uint64
+	Kind  WordKind
 }
 
 func (w Word) String() string {
@@ -29,6 +42,10 @@ func (w Word) String() string {
 	default:
 		panic("unknown human representation of word")
 	}
+}
+
+func (w Word) IsZero() bool {
+	return w.Value == 0
 }
 
 func NewWord[T ~int64 | ~float64 | ~uint32](i T, kind WordKind) Word {
