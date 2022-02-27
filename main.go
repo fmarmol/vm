@@ -13,7 +13,8 @@ import (
 
 func Panic(s string, args ...interface{}) {
 	err := fmt.Errorf(s, args...)
-	panic(err)
+	fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+	os.Exit(1)
 }
 
 type VM struct {
@@ -24,6 +25,10 @@ type VM struct {
 	ip      uint32 // instruction pointer
 	stop    bool
 	program *Program
+}
+
+func (v *VM) stackTop() Word {
+	return v.stack[v.sp-1]
 }
 
 const PROGRAM_CAPACITY = 512
@@ -44,32 +49,11 @@ func NewVM(size uint32, program *Program) *VM {
 	}
 }
 
-type InstKind uint32
-
 type Inst struct {
-	Kind    InstKind
-	Operand Word
+	Kind     InstKind
+	Operand  Word
+	Register uint32
 }
-
-const (
-	Inst_PushInt InstKind = iota
-	Inst_PushFloat
-	Inst_Add
-	Inst_Sub
-	Inst_Mul
-	Inst_Div
-	Inst_Eq
-	Inst_Halt
-	Inst_Jmp
-	Inst_JmpTrue
-	Inst_Dup
-	Inst_Swap
-	Inst_Drop
-	Inst_Print
-	Inst_Label
-	Inst_Com
-	Inst_Count
-)
 
 func NewInst(kind InstKind) func(Word) Inst {
 	return func(value Word) Inst {
@@ -79,14 +63,15 @@ func NewInst(kind InstKind) func(Word) Inst {
 
 var (
 	// no operand
+	Start = Inst{Kind: Inst_Start} // start is the entry point
 	Add   = Inst{Kind: Inst_Add}   // add
 	Sub   = Inst{Kind: Inst_Sub}   // substract
 	Mul   = Inst{Kind: Inst_Mul}   // multiply
 	Div   = Inst{Kind: Inst_Div}   // divide
 	Print = Inst{Kind: Inst_Print} // print the value at the top of the stack
+	Ret   = Inst{Kind: Inst_Ret}   // ret take the value at the top of the stack and assign ip to it. ret is used in functions to return to the caller next instruction
 	Halt  = Inst{Kind: Inst_Halt}  // stop the vm
 	Eq    = Inst{Kind: Inst_Eq}    // check if last 2 values are equal and but 1 or 0 at the top
-	Swap  = Inst{Kind: Inst_Swap}  //  swap the 2 top values on the stack
 	Drop  = Inst{Kind: Inst_Drop}  // remove value at the top of the stack
 
 	//operand
@@ -94,58 +79,24 @@ var (
 	PushFloat = NewInst(Inst_PushFloat) // push float at the top of the stack
 	Jmp       = NewInst(Inst_Jmp)       // Jmp at a position of the program
 	JmpTrue   = NewInst(Inst_JmpTrue)   // Jump if top value of the stack != 0 at the position of the program
+	Call      = NewInst(Inst_Call)      // call function
 	Dup       = NewInst(Inst_Dup)       // Duplicate the value at the relative position in stack at the top of the stack
 	Label     = NewInst(Inst_Label)
+	Swap      = NewInst(Inst_Swap)    //  swap the top of the stack with the relative position from sp
+	EqInt     = NewInst(Inst_EqInt)   // compare the value with the top of the stack
+	EqFloat   = NewInst(Inst_EqFloat) // compare the value with the top of the stack
 )
-
-func (ik InstKind) String() string {
-	switch ik {
-	case Inst_PushInt:
-		return "pushi"
-	case Inst_PushFloat:
-		return "pushf"
-	case Inst_Add:
-		return "add"
-	case Inst_Sub:
-		return "sub"
-	case Inst_Mul:
-		return "mul"
-	case Inst_Div:
-		return "div"
-	case Inst_Eq:
-		return "eq"
-	case Inst_Halt:
-		return "halt"
-	case Inst_Jmp:
-		return "jmp"
-	case Inst_JmpTrue:
-		return "jmptrue"
-	case Inst_Dup:
-		return "dup"
-	case Inst_Swap:
-		return "swap"
-	case Inst_Drop:
-		return "drop"
-	case Inst_Print:
-		return "print"
-	case Inst_Label:
-		return "label"
-	case Inst_Com:
-		return "comment"
-	default:
-		Panic("InstKind unknown human representation of error: %d", ik)
-	}
-	return ""
-}
 
 func (i Inst) String() string {
 	switch i.Kind {
-	case Inst_PushInt, Inst_PushFloat, Inst_Jmp, Inst_JmpTrue, Inst_Dup, Inst_Label:
+	// operand
+	case Inst_PushInt, Inst_PushFloat, Inst_Jmp, Inst_JmpTrue, Inst_Dup, Inst_Label, Inst_Call, Inst_Swap, Inst_EqInt, Inst_EqFloat:
 		return fmt.Sprintf("%v %v", i.Kind, i.Operand)
-	case Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print, Inst_Swap, Inst_Drop:
+	// no operand
+	case Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print, Inst_Drop, Inst_Ret, Inst_Start:
 		return fmt.Sprintf("%v", i.Kind)
 	default:
-		Panic("Inst unknown human representation of error: %d", i.Kind)
+		Panic("Inst unknown human representation of error: %v", i.Kind)
 	}
 	return ""
 }
@@ -159,6 +110,7 @@ const (
 	Err_IllegalInstruction
 	Err_DivisionByZero
 	Err_OutOfIndexInstruction
+	Err_WrongTypeOperation
 )
 
 func (e Err) String() string {
@@ -175,14 +127,18 @@ func (e Err) String() string {
 		return "OK"
 	case Err_OutOfIndexInstruction:
 		return "Out Of Index Instruction"
+	case Err_WrongTypeOperation:
+		return "Wrong Type Operation"
 	default:
-		Panic("Err unkown human representation of error: %d", e)
+		Panic("Err unknown human representation of error: %d", e)
 	}
 	return ""
 }
 
 func (v *VM) executeInst(inst Inst) (err Err) {
 	switch inst.Kind {
+	case Inst_Start:
+		v.ip++
 	case Inst_PushInt, Inst_PushFloat:
 		if v.sp >= v.maxSize {
 			err = Err_Overflow
@@ -191,6 +147,32 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 			v.sp++
 			v.ip++
 		}
+	// DEBUG INSTRUCTIONS
+	case Inst_EqInt:
+		a := v.stack[v.sp-1]
+		op := inst.Operand
+		if a.Kind != op.Kind {
+			fmt.Fprintf(os.Stderr, "incompatible types: tried comparison between %v and %v\n", a.Kind, op.Kind)
+			err = Err_WrongTypeOperation
+			return
+		}
+		if a.Int64() != op.Int64() {
+			Panic("invalid assertion top[%v] != eq[%v]", a.Int64(), op.Int64())
+		}
+		v.ip++
+	case Inst_EqFloat:
+		top := v.stackTop()
+		op := inst.Operand
+		if top.Kind != op.Kind {
+			fmt.Fprintf(os.Stderr, "incompatible types: tried comparison between %v and %v\n", top.Kind, op.Kind)
+			err = Err_WrongTypeOperation
+			return
+		}
+		if top.Float64() != op.Float64() {
+			Panic("invalid assertion top[%v] != eq[%v]", top.Float64(), op.Float64())
+		}
+		v.ip++
+	// END DEBUG INSTRUCTIONS
 	case Inst_Add, Inst_Sub, Inst_Mul, Inst_Div, Inst_Eq:
 		if len(v.stack) < 2 {
 			err = Err_Underflow
@@ -199,7 +181,9 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 		a := v.stack[v.sp-2]
 		b := v.stack[v.sp-1]
 		if a.Kind != b.Kind {
-			panic(fmt.Errorf("incompatible types: tried to to binary operation between %v and %v", a.Kind, b.Kind))
+			fmt.Fprintf(os.Stderr, "incompatible types: tried to binary operation between %v and %v\n", a.Kind, b.Kind)
+			err = Err_WrongTypeOperation
+			return
 		}
 		var result Word
 		switch a.Kind {
@@ -223,7 +207,9 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 		v.sp--
 		v.ip++
 	case Inst_Swap:
-		v.stack[v.sp-2], v.stack[v.sp-1] = v.stack[v.sp-1], v.stack[v.sp-2]
+		pos_top := v.sp - 1
+		pos_sec := v.sp - (inst.Operand.UInt32())
+		v.stack[pos_sec], v.stack[pos_top] = v.stack[pos_top], v.stack[pos_sec]
 		v.ip++
 	case Inst_Drop:
 		v.stack[v.sp-1] = Word{}
@@ -231,6 +217,19 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 		v.ip++
 	case Inst_Halt:
 		v.stop = true
+	case Inst_Ret:
+		v.ip = v.stackTop().UInt32()
+		v.stack[v.sp-1] = Word{}
+		v.sp--
+	case Inst_Call:
+		if inst.Operand.UInt32() < 0 || inst.Operand.UInt32() >= v.program.Size() {
+			err = Err_OutOfIndexInstruction
+		} else {
+			v.stack[v.sp] = NewWord(v.ip+1, UInt32)
+			v.sp++
+			v.ip = inst.Operand.UInt32()
+		}
+
 	case Inst_Jmp:
 		if inst.Operand.UInt32() < 0 || inst.Operand.UInt32() >= v.program.Size() {
 			err = Err_OutOfIndexInstruction
@@ -267,7 +266,18 @@ func (v *VM) executeInst(inst Inst) (err Err) {
 func (v *VM) dump() {
 	fmt.Println("STACK:")
 	for i := v.bp; i < v.sp; i++ {
-		fmt.Println("\t", v.stack[i])
+		word := v.stack[i]
+		switch word.Kind {
+		case Int64:
+			fmt.Printf("\t %v %v\n", word.Kind, word.Int64())
+		case UInt32:
+			fmt.Printf("\t %v %v\n", word.Kind, word.UInt32())
+		case Float64:
+			fmt.Printf("\t %v %v\n", word.Kind, word.Float64())
+		default:
+			Panic("cannot dump word of kind: %d", word.Kind)
+
+		}
 	}
 }
 
@@ -282,14 +292,22 @@ func NewProgram(insts ...Inst) *Program {
 
 func (v *VM) execute(maxStep uint) {
 	var counter uint
+	var started bool
 	for !v.stop && counter < maxStep {
 		inst := (*v.program)[v.ip]
+		if inst.Kind != Inst_Start && !started {
+			v.ip++
+			continue
+		} else {
+			started = true
+		}
 		fmt.Printf("inst=%v,ip=%v, sp=%v\n", inst, v.ip, v.sp)
 		err := v.executeInst(inst)
 		if err != OK {
-			Panic("Inst: %v, Err: %v", inst.String(), err.String())
+			fmt.Fprintf(os.Stderr, "Inst: %v, Err: %v\n", inst.String(), err.String())
+			v.dump()
+			return
 		}
-		// v.dump()
 		counter++
 	}
 	fmt.Println("number of execution steps:", counter)
@@ -302,29 +320,6 @@ func (v *VM) WriteToFile(pathFile string) error {
 	}
 	defer fd.Close()
 	return binary.Write(fd, binary.BigEndian, *v.program)
-}
-
-func LoadProgram(pathFile string) (*Program, error) {
-	fd, err := os.Open(pathFile)
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
-
-	sizeInst := int64(binary.Size(Inst{}))
-
-	fi, err := fd.Stat()
-	if err != nil {
-		return nil, err
-	}
-	sizeFile := fi.Size()
-
-	p := Program(make([]Inst, sizeFile/sizeInst, sizeFile/sizeInst))
-	err = binary.Read(fd, binary.BigEndian, &p)
-	if err != nil {
-		return nil, err
-	}
-	return &p, nil
 }
 
 var (

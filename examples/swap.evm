@@ -1,7 +1,9 @@
-pushi 1
-pushi 2
-swap
-print
-drop
-print
-halt
+__start:
+    pushi 1
+    pushi 2
+    pushi 3 
+    swap 2
+    print
+    drop
+    print
+    halt

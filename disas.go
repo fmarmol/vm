@@ -16,7 +16,7 @@ func (p *Program) disas() (ret []string) {
 			labelName := fmt.Sprintf("__label_%d", ip)
 			labels[inst.Operand.UInt32()] = labelName
 			ret = append(ret, labelName+":")
-		case Inst_Jmp, Inst_JmpTrue:
+		case Inst_Jmp, Inst_JmpTrue, Inst_Call:
 			//check if addres is saved in labels:
 			_, ok := labels[inst.Operand.UInt32()]
 			if !ok { // need to resolve later

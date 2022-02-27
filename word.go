@@ -27,8 +27,8 @@ func (w WordKind) String() string {
 }
 
 type Word struct {
-	Value uint64
 	Kind  WordKind
+	Value uint64
 }
 
 func (w Word) String() string {

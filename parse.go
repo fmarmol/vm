@@ -16,18 +16,23 @@ type Rule struct {
 
 func loadRules() []*Rule {
 	var rules = []*Rule{
+		{kind: Inst_Start, pattern: `^(?P<label>__start:)`},
 		{kind: Inst_Com, pattern: `^(?P<com>//.*)`},
 		{kind: Inst_Label, pattern: `^(?P<label>[[:word:]]+):`},
 		{kind: Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:word:]]+)`},
 		{kind: Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:word:]]+)`},
-		{kind: Inst_PushInt, pattern: `^pushi\s+(?P<operand>\d+)`},
-		{kind: Inst_PushFloat, pattern: `^pushf\s+(?P<operand>[0-9]+.[0-9]*)`},
+		{kind: Inst_Call, pattern: `^call\s+(?P<label>[[:word:]]+)`},
+		{kind: Inst_PushInt, pattern: `^pushi\s+(?P<operand>[-+]?\d+)`},
+		{kind: Inst_PushFloat, pattern: `^pushf\s+(?P<operand>[-+]?[0-9]+.[0-9]*)`},
 		{kind: Inst_Dup, pattern: `^dup\s+(?P<operand>\d+)`},
-		{kind: Inst_Swap, pattern: `^(?P<inst>swap)`},
+		{kind: Inst_Swap, pattern: `^swap\s+(?P<operand>\d+)`},
+		{kind: Inst_EqFloat, pattern: `^eqf\s+(?P<operand>[-+]?[0-9]+.[0-9]*)`},
+		{kind: Inst_EqInt, pattern: `^eqi\s+(?P<operand>[-+]?\d+)`},
 		{kind: Inst_Drop, pattern: `^(?P<inst>drop)`},
 		{kind: Inst_Add, pattern: `^(?P<inst>add)`},
 		{kind: Inst_Sub, pattern: `^(?P<inst>sub)`},
-		{kind: Inst_Print, pattern: `(?P<inst>^print)`},
+		{kind: Inst_Print, pattern: `^(?P<inst>^print)`},
+		{kind: Inst_Ret, pattern: `^(?P<inst>ret)`},
 		{kind: Inst_Halt, pattern: `^(?P<inst>halt)`},
 	}
 	for _, r := range rules {
@@ -57,6 +62,8 @@ func loadSourceCode(code string) *Program {
 	}()
 
 	var ip uint32
+	var foundStart bool
+	var foundStop bool
 
 LINE:
 	for _, line := range lines {
@@ -72,6 +79,9 @@ LINE:
 			case Inst_Com:
 				ip++
 				continue LINE
+			case Inst_Start:
+				foundStart = true
+				newInst = Start
 			case Inst_Label:
 				label := groups.MustGet("label")
 
@@ -87,6 +97,12 @@ LINE:
 			case Inst_PushFloat:
 				op := groups.MustGetAsFloat("operand")
 				newInst = PushFloat(NewWord(op, Float64))
+			case Inst_EqInt:
+				op := groups.MustGetAsInt("operand")
+				newInst = EqInt(NewWord(int64(op), Int64))
+			case Inst_EqFloat:
+				op := groups.MustGetAsFloat("operand")
+				newInst = EqFloat(NewWord(op, Float64))
 			case Inst_Dup:
 				op := groups.MustGetAsInt("operand")
 				newInst = Dup(NewWord(int64(op), UInt32))
@@ -106,16 +122,28 @@ LINE:
 					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
 				}
 				newInst = JmpTrue(NewWord(addr, UInt32))
+			case Inst_Call:
+				label := groups.MustGet("label")
+
+				addr, ok := labels[label]
+				if !ok {
+					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
+				}
+				newInst = Call(NewWord(addr, UInt32))
 			case Inst_Swap:
-				newInst = Swap
+				idx := groups.MustGetAsInt("operand")
+				newInst = Swap(NewWord(uint32(idx), UInt32))
 			case Inst_Drop:
 				newInst = Drop
 			case Inst_Add:
 				newInst = Add
 			case Inst_Sub:
 				newInst = Sub
+			case Inst_Ret:
+				newInst = Ret
 			case Inst_Halt:
 				newInst = Halt
+				foundStop = true
 			case Inst_Print:
 				newInst = Print
 			default:
@@ -128,6 +156,12 @@ LINE:
 		if !found {
 			Panic("could not parse line: %v", line)
 		}
+	}
+	if !foundStart {
+		Panic("no entry point __start: found")
+	}
+	if !foundStop {
+		Panic("no halt found")
 	}
 
 	for _, inst := range instsToResolve {

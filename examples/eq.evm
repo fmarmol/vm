@@ -1,0 +1,4 @@
+__start:
+    pushi 1
+    eqf 2.0
+    halt
