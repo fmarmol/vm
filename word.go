@@ -11,6 +11,7 @@ const (
 	Int64 WordKind = iota
 	Float64
 	UInt32
+	Ptr
 )
 
 func (w WordKind) String() string {
@@ -21,6 +22,8 @@ func (w WordKind) String() string {
 		return "float64"
 	case UInt32:
 		return "uint32"
+	case Ptr:
+		return "ptr"
 	default:
 		panic(fmt.Errorf("unknown human representation fo WordKind %d", w))
 	}
@@ -39,6 +42,8 @@ func (w Word) String() string {
 		return fmt.Sprintf("%f", w.Float64())
 	case UInt32:
 		return fmt.Sprintf("%d", w.UInt32())
+	case Ptr:
+		return fmt.Sprintf("0x%02X", w.Ptr())
 	default:
 		panic("unknown human representation of word")
 	}
@@ -73,6 +78,13 @@ func (w Word) Int64() int64 {
 func (w Word) UInt32() uint32 {
 	if w.Kind != UInt32 {
 		panic(fmt.Errorf("cannot convert word value into uint32 should be %v", w.Kind))
+	}
+	return *(*uint32)(unsafe.Pointer(&w.Value))
+}
+
+func (w Word) Ptr() uint32 {
+	if w.Kind != Ptr {
+		panic(fmt.Errorf("cannot convert word value into ptr should be %v", w.Kind))
 	}
 	return *(*uint32)(unsafe.Pointer(&w.Value))
 }

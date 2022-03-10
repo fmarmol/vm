@@ -1,10 +1,11 @@
 // fibonnaci suite
-pushi 0
-pushi 1
-loop:
-    dup 2
-    dup 2
-    add
-    print
-    jmp loop
-    halt
+__start:
+    pushi 0
+    pushi 1
+    loop:
+        dup 2
+        dup 2
+        add
+        print
+        jmp loop
+        halt

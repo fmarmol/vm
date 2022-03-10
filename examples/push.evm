@@ -1,1 +1,3 @@
-pushf 1.0
+__start:
+    pushf 1.0
+    halt

@@ -1,6 +1,7 @@
-pushi 10
-print #print first 
-jmp loop
+__start:
+    pushi 10
+    print #print first 
+    jmp loop
 loop:
     pushi 1
     sub

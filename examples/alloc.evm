@@ -1,0 +1,5 @@
+__start:
+    pushu 10
+    alloc
+    dump
+    halt

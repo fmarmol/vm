@@ -3,9 +3,10 @@ module github.com/fmarmol/vm
 go 1.18
 
 require (
-	github.com/fmarmol/basename v0.0.0-20220116154746-585ba709798b
+	github.com/fmarmol/basename v0.0.0-20220308144528-6ced15d35aba
 	github.com/fmarmol/regex v0.0.0-20220217095511-74c18e4a6c38
 	github.com/fmarmol/tuple v0.0.0-20220117065043-74870be2938d
+	github.com/magefile/mage v1.12.1
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gotest.tools/v3 v3.0.3

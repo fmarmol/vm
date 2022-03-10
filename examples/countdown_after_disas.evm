@@ -1,9 +1,0 @@
-push 10
-print
-jmp __label_3
-__label_3:
-push 1
-sub
-print
-jmptrue __label_3
-halt

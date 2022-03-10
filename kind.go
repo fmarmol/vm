@@ -5,6 +5,7 @@ type InstKind uint32
 const (
 	Inst_PushInt InstKind = iota
 	Inst_PushFloat
+	Inst_PushUInt32 = iota
 	Inst_EqInt
 	Inst_EqFloat
 	Inst_Add
@@ -21,18 +22,24 @@ const (
 	Inst_Swap
 	Inst_Drop
 	Inst_Print
+	Inst_Dump
 	Inst_Label
 	Inst_Start
 	Inst_Com
+	Inst_Alloc
 	Inst_Count
 )
 
 func (ik InstKind) String() string {
 	switch ik {
+	case Inst_Dump:
+		return "dump"
 	case Inst_PushInt:
 		return "pushi"
 	case Inst_PushFloat:
 		return "pushf"
+	case Inst_PushUInt32:
+		return "pushu"
 	case Inst_Add:
 		return "add"
 	case Inst_Sub:
@@ -71,6 +78,8 @@ func (ik InstKind) String() string {
 		return "eqi"
 	case Inst_EqFloat:
 		return "eqf"
+	case Inst_Alloc:
+		return "alloc"
 	default:
 		Panic("InstKind unknown human representation of error: %d", ik)
 	}

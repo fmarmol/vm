@@ -1,9 +1,0 @@
-pushf 20.000000
-print
-jmp __label_3
-__label_3:
-pushf 0.500000
-sub
-print
-jmptrue __label_3
-halt

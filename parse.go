@@ -22,6 +22,7 @@ func loadRules() []*Rule {
 		{kind: Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:word:]]+)`},
 		{kind: Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:word:]]+)`},
 		{kind: Inst_Call, pattern: `^call\s+(?P<label>[[:word:]]+)`},
+		{kind: Inst_PushUInt32, pattern: `^pushu\s+(?P<operand>\d+)`},
 		{kind: Inst_PushInt, pattern: `^pushi\s+(?P<operand>[-+]?\d+)`},
 		{kind: Inst_PushFloat, pattern: `^pushf\s+(?P<operand>[-+]?[0-9]+.[0-9]*)`},
 		{kind: Inst_Dup, pattern: `^dup\s+(?P<operand>\d+)`},
@@ -34,6 +35,8 @@ func loadRules() []*Rule {
 		{kind: Inst_Print, pattern: `^(?P<inst>^print)`},
 		{kind: Inst_Ret, pattern: `^(?P<inst>ret)`},
 		{kind: Inst_Halt, pattern: `^(?P<inst>halt)`},
+		{kind: Inst_Alloc, pattern: `^(?P<inst>alloc)`},
+		{kind: Inst_Dump, pattern: `^(?P<inst>dump)`},
 	}
 	for _, r := range rules {
 		r.re = regexp.MustCompile(r.pattern)
@@ -97,6 +100,9 @@ LINE:
 			case Inst_PushFloat:
 				op := groups.MustGetAsFloat("operand")
 				newInst = PushFloat(NewWord(op, Float64))
+			case Inst_PushUInt32:
+				op := groups.MustGetAsInt("operand")
+				newInst = PushUInt32(NewWord(uint32(op), UInt32))
 			case Inst_EqInt:
 				op := groups.MustGetAsInt("operand")
 				newInst = EqInt(NewWord(int64(op), Int64))
@@ -146,6 +152,10 @@ LINE:
 				foundStop = true
 			case Inst_Print:
 				newInst = Print
+			case Inst_Alloc:
+				newInst = Alloc
+			case Inst_Dump:
+				newInst = Dump
 			default:
 				Panic("Unkwon instruction line: %v", line)
 			}

@@ -6,6 +6,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fmarmol/basename v0.0.0-20220116154746-585ba709798b h1:xXEpstgmCOs7+Sw0EX9tCGtzDd7QK0MSi8dzcd1uQ+k=
 github.com/fmarmol/basename v0.0.0-20220116154746-585ba709798b/go.mod h1:3vhhJh0nec3aOzqNOOQivHhIdxURbcbvluPwmGjNPf8=
+github.com/fmarmol/basename v0.0.0-20220308144528-6ced15d35aba h1:7uV4rIFErsf/iA7X6taarZHH2D++TuQaJlgmXmf5xZA=
+github.com/fmarmol/basename v0.0.0-20220308144528-6ced15d35aba/go.mod h1:3vhhJh0nec3aOzqNOOQivHhIdxURbcbvluPwmGjNPf8=
 github.com/fmarmol/regex v0.0.0-20220217095511-74c18e4a6c38 h1:g3EKpsGzLdI8jRxHe5DPm4V5wxfd40lIlXGTrUoEL/U=
 github.com/fmarmol/regex v0.0.0-20220217095511-74c18e4a6c38/go.mod h1:W25yllO6l+4L8k/J87GHquRMzAnY9pH5gdVNKHrYOcg=
 github.com/fmarmol/tuple v0.0.0-20220117065043-74870be2938d h1:uyh15fbiwIuMOsn5qf9FnvkwZ9USWwG3v7Dv5pg0jQE=
@@ -13,6 +15,8 @@ github.com/fmarmol/tuple v0.0.0-20220117065043-74870be2938d/go.mod h1:IjBiPhQLAu
 github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.6 h1:BKbKCqvP6I+rmFHt06ZmyQtvB8xAkWdhFyr0ZUNZcxQ=
 github.com/google/go-cmp v0.5.6/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/magefile/mage v1.12.1 h1:oGdAbhIUd6iKamKlDGVtU6XGdy5SgNuCWn7gCTgHDtU=
+github.com/magefile/mage v1.12.1/go.mod h1:z5UZb/iS3GoOSn0JgWuiw7dxlurVYTu+/jHXqQg881A=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
