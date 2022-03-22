@@ -1,11 +1,13 @@
-package main
+package inst
+
+import "github.com/fmarmol/vm/pkg/fatal"
 
 type InstKind uint32
 
 const (
-	Inst_PushInt InstKind = iota
+	Inst_PushInt InstKind = iota + 1 // default value 0 should not be valid to easier debug life
 	Inst_PushFloat
-	Inst_PushUInt32 = iota
+	Inst_PushUInt32
 	Inst_EqInt
 	Inst_EqFloat
 	Inst_Add
@@ -27,6 +29,7 @@ const (
 	Inst_Start
 	Inst_Com
 	Inst_Alloc
+	Inst_WriteStr
 	Inst_Count
 )
 
@@ -80,8 +83,10 @@ func (ik InstKind) String() string {
 		return "eqf"
 	case Inst_Alloc:
 		return "alloc"
+	case Inst_WriteStr:
+		return "wstr"
 	default:
-		Panic("InstKind unknown human representation of error: %d", ik)
+		fatal.Panic("InstKind unknown human representation of error: %d", ik)
 	}
 	return ""
 }

@@ -1,4 +1,4 @@
-package main
+package word
 
 import (
 	"fmt"
@@ -53,7 +53,7 @@ func (w Word) IsZero() bool {
 	return w.Value == 0
 }
 
-func NewWord[T ~int64 | ~float64 | ~uint32](i T, kind WordKind) Word {
+func NewWord[T ~int64 | ~float64 | ~uint32 | uintptr](i T, kind WordKind) Word {
 	w := Word{
 		Kind:  kind,
 		Value: *(*uint64)(unsafe.Pointer(&i)),
@@ -82,9 +82,9 @@ func (w Word) UInt32() uint32 {
 	return *(*uint32)(unsafe.Pointer(&w.Value))
 }
 
-func (w Word) Ptr() uint32 {
+func (w Word) Ptr() uintptr {
 	if w.Kind != Ptr {
 		panic(fmt.Errorf("cannot convert word value into ptr should be %v", w.Kind))
 	}
-	return *(*uint32)(unsafe.Pointer(&w.Value))
+	return uintptr(unsafe.Pointer(&w.Value))
 }

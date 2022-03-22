@@ -1,15 +1,19 @@
-package main
+package inst
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/fmarmol/vm/pkg/fatal"
+	"github.com/fmarmol/vm/pkg/word"
+)
 
 type Inst struct {
-	Kind     InstKind
-	Operand  Word
-	Register uint32
+	Kind    InstKind
+	Operand word.Word // operand are `values` to be pushed on the stack
 }
 
-func NewInst(kind InstKind) func(Word) Inst {
-	return func(value Word) Inst {
+func NewInst(kind InstKind) func(word.Word) Inst {
+	return func(value word.Word) Inst {
 		return Inst{Kind: kind, Operand: value}
 	}
 }
@@ -41,6 +45,7 @@ var (
 	Swap       = NewInst(Inst_Swap)       //  swap the top of the stack with the relative position from sp
 	EqInt      = NewInst(Inst_EqInt)      // compare the value with the top of the stack
 	EqFloat    = NewInst(Inst_EqFloat)    // compare the value with the top of the stack
+
 )
 
 func (i Inst) String() string {
@@ -52,7 +57,7 @@ func (i Inst) String() string {
 	case Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print, Inst_Drop, Inst_Ret, Inst_Start, Inst_Alloc, Inst_Dump:
 		return fmt.Sprintf("%v", i.Kind)
 	default:
-		Panic("Inst unknown human representation of error: %v", i.Kind)
+		fatal.Panic("Inst unknown human representation of error: %v", i.Kind)
 	}
 	return ""
 }

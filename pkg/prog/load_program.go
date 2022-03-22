@@ -1,8 +1,10 @@
-package main
+package prog
 
 import (
 	"encoding/binary"
 	"os"
+
+	"github.com/fmarmol/vm/pkg/inst"
 )
 
 func LoadProgram(pathFile string) (*Program, error) {
@@ -12,7 +14,7 @@ func LoadProgram(pathFile string) (*Program, error) {
 	}
 	defer fd.Close()
 
-	sizeInst := int64(binary.Size(Inst{}))
+	sizeInst := int64(binary.Size(inst.Inst{}))
 
 	fi, err := fd.Stat()
 	if err != nil {
@@ -20,7 +22,7 @@ func LoadProgram(pathFile string) (*Program, error) {
 	}
 	sizeFile := fi.Size()
 
-	p := Program(make([]Inst, sizeFile/sizeInst, sizeFile/sizeInst))
+	p := Program(make([]inst.Inst, sizeFile/sizeInst, sizeFile/sizeInst))
 	err = binary.Read(fd, binary.BigEndian, &p)
 	if err != nil {
 		return nil, err
