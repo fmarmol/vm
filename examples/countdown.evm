@@ -1,10 +1,10 @@
 __start:
     pushi 10
-    print #print first 
+    debug #print first 
     jmp loop
 loop:
     pushi 1
     sub
-    print
+    debug
     jmptrue loop
     halt
