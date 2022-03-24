@@ -36,6 +36,7 @@ func loadRules() []*Rule {
 		{kind: inst.Inst_Add, pattern: `^(?P<inst>add)`},
 		{kind: inst.Inst_Sub, pattern: `^(?P<inst>sub)`},
 		{kind: inst.Inst_Print, pattern: `^(?P<inst>^print)`},
+		{kind: inst.Inst_Debug, pattern: `^(?P<inst>^debug)`},
 		{kind: inst.Inst_Ret, pattern: `^(?P<inst>ret)`},
 		{kind: inst.Inst_Halt, pattern: `^(?P<inst>halt)`},
 		{kind: inst.Inst_Alloc, pattern: `^(?P<inst>alloc)`},
@@ -97,25 +98,25 @@ LINE:
 					fatal.Panic("label %v already defined", label)
 				}
 				labels[label] = ip
-				newInst = inst.Label(word.NewWord(ip, word.UInt32))
+				newInst = inst.Label(word.NewU32(ip))
 			case inst.Inst_PushInt:
 				op := groups.MustGetAsInt("operand")
-				newInst = inst.PushInt(word.NewWord(int64(op), word.Int64))
+				newInst = inst.PushInt(word.NewI64(int64(op)))
 			case inst.Inst_PushFloat:
 				op := groups.MustGetAsFloat("operand")
-				newInst = inst.PushFloat(word.NewWord(op, word.Float64))
+				newInst = inst.PushFloat(word.NewF64(op))
 			case inst.Inst_PushUInt32:
 				op := groups.MustGetAsInt("operand")
-				newInst = inst.PushUInt32(word.NewWord(uint32(op), word.UInt32))
+				newInst = inst.PushUInt32(word.NewU32(uint32(op)))
 			case inst.Inst_EqInt:
 				op := groups.MustGetAsInt("operand")
-				newInst = inst.EqInt(word.NewWord(int64(op), word.Int64))
+				newInst = inst.EqInt(word.NewI64(int64(op)))
 			case inst.Inst_EqFloat:
 				op := groups.MustGetAsFloat("operand")
-				newInst = inst.EqFloat(word.NewWord(op, word.Float64))
+				newInst = inst.EqFloat(word.NewF64(op))
 			case inst.Inst_Dup:
 				op := groups.MustGetAsInt("operand")
-				newInst = inst.Dup(word.NewWord(int64(op), word.UInt32))
+				newInst = inst.Dup(word.NewU32(uint32(op)))
 			case inst.Inst_Jmp:
 				label := groups.MustGet("label")
 
@@ -123,7 +124,7 @@ LINE:
 				if !ok {
 					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
 				}
-				newInst = inst.Jmp(word.NewWord(addr, word.UInt32))
+				newInst = inst.Jmp(word.NewU32(addr))
 			case inst.Inst_JmpTrue:
 				label := groups.MustGet("label")
 
@@ -131,7 +132,7 @@ LINE:
 				if !ok {
 					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
 				}
-				newInst = inst.JmpTrue(word.NewWord(addr, word.UInt32))
+				newInst = inst.JmpTrue(word.NewU32(addr))
 			case inst.Inst_Call:
 				label := groups.MustGet("label")
 
@@ -139,13 +140,13 @@ LINE:
 				if !ok {
 					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(len(p))))
 				}
-				newInst = inst.Call(word.NewWord(addr, word.UInt32))
+				newInst = inst.Call(word.NewU32(addr))
 			// case Inst_WriteStr:
 			// 	op := groups.MustGet("operand")
 			// 	newInst = WriteStr(NewWord(op, Str))
 			case inst.Inst_Swap:
 				idx := groups.MustGetAsInt("operand")
-				newInst = inst.Swap(word.NewWord(uint32(idx), word.UInt32))
+				newInst = inst.Swap(word.NewU32(uint32(idx)))
 			case inst.Inst_Drop:
 				newInst = inst.Drop
 			case inst.Inst_Add:
@@ -159,6 +160,8 @@ LINE:
 				foundStop = true
 			case inst.Inst_Print:
 				newInst = inst.Print
+			case inst.Inst_Debug:
+				newInst = inst.Debug
 			case inst.Inst_Alloc:
 				newInst = inst.Alloc
 			case inst.Inst_Dump:
@@ -189,8 +192,7 @@ LINE:
 		if !ok {
 			fatal.Panic("Label %q is not defined", inst.First)
 		}
-		p[inst.Second].Operand = word.NewWord(res, word.UInt32)
+		p[inst.Second].Operand = word.NewU32(res)
 	}
-
 	return &p
 }

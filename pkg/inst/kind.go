@@ -24,6 +24,7 @@ const (
 	Inst_Swap
 	Inst_Drop
 	Inst_Print
+	Inst_Debug
 	Inst_Dump
 	Inst_Label
 	Inst_Start
@@ -85,6 +86,8 @@ func (ik InstKind) String() string {
 		return "alloc"
 	case Inst_WriteStr:
 		return "wstr"
+	case Inst_Debug:
+		return "debug"
 	default:
 		fatal.Panic("InstKind unknown human representation of error: %d", ik)
 	}

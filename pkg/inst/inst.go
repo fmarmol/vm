@@ -25,7 +25,9 @@ var (
 	Sub   = Inst{Kind: Inst_Sub}   // substract
 	Mul   = Inst{Kind: Inst_Mul}   // multiply
 	Div   = Inst{Kind: Inst_Div}   // divide
-	Print = Inst{Kind: Inst_Print} // print the value at the top of the stack
+	Print = Inst{Kind: Inst_Print} // print the value at the top of the stack and consumes it
+	Debug = Inst{Kind: Inst_Debug} // print the value at the top of the stasck without consuming it
+
 	Ret   = Inst{Kind: Inst_Ret}   // ret take the value at the top of the stack and assign ip to it. ret is used in functions to return to the caller next instruction
 	Halt  = Inst{Kind: Inst_Halt}  // stop the vm
 	Eq    = Inst{Kind: Inst_Eq}    // check if last 2 values are equal and but 1 or 0 at the top
@@ -54,7 +56,7 @@ func (i Inst) String() string {
 	case Inst_PushInt, Inst_PushFloat, Inst_Jmp, Inst_JmpTrue, Inst_Dup, Inst_Label, Inst_Call, Inst_Swap, Inst_EqInt, Inst_EqFloat, Inst_PushUInt32:
 		return fmt.Sprintf("%v %v", i.Kind, i.Operand)
 	// no operand
-	case Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print, Inst_Drop, Inst_Ret, Inst_Start, Inst_Alloc, Inst_Dump:
+	case Inst_Debug, Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print, Inst_Drop, Inst_Ret, Inst_Start, Inst_Alloc, Inst_Dump:
 		return fmt.Sprintf("%v", i.Kind)
 	default:
 		fatal.Panic("Inst unknown human representation of error: %v", i.Kind)

@@ -55,6 +55,10 @@ var (
 	sourceRun = run.Arg("source", "source file .vm").String()
 	maxStep   = run.Flag("max_step", "max exection steps allowed").Default("300").Uint()
 
+	debug        = app.Command("debug", "run vm file").Alias("d")
+	sourceDebug  = debug.Arg("source", "source file .vm").String()
+	maxStepDebug = debug.Flag("max_step", "max exection steps allowed").Default("300").Uint()
+
 	disas       = app.Command("disas", "disassemble a program .vm")
 	sourceDisas = disas.Arg("source", "source file .vm").String()
 	outputDisas = disas.Flag("output", "output file .vm.disas").Short('o').String()
@@ -83,6 +87,13 @@ func main() {
 		}
 		v := vm.NewVM(PROGRAM_CAPACITY, p)
 		v.Execute(*maxStep)
+	case debug.FullCommand():
+		p, err := prog.LoadProgram(*sourceDebug)
+		if err != nil {
+			panic(err)
+		}
+		v := vm.NewVM(PROGRAM_CAPACITY, p)
+		v.ExecuteWithDebug(*maxStepDebug)
 	case disas.FullCommand():
 		p, err := prog.LoadProgram(*sourceDisas)
 		if err != nil {
