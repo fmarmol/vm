@@ -24,13 +24,15 @@ const (
 	Inst_Swap
 	Inst_Drop
 	Inst_Print
+	Inst_PrintChar
 	Inst_Debug
 	Inst_Dump
 	Inst_Label
 	Inst_Start
 	Inst_Com
 	Inst_Alloc
-	Inst_WriteStr
+	// MEM
+	// Inst_SetMem
 	Inst_Count
 )
 
@@ -70,6 +72,8 @@ func (ik InstKind) String() string {
 		return "drop"
 	case Inst_Print:
 		return "print"
+	case Inst_PrintChar:
+		return "printc"
 	case Inst_Label:
 		return "label"
 	case Inst_Com:
@@ -84,10 +88,10 @@ func (ik InstKind) String() string {
 		return "eqf"
 	case Inst_Alloc:
 		return "alloc"
-	case Inst_WriteStr:
-		return "wstr"
 	case Inst_Debug:
 		return "debug"
+	// case Inst_SetMem:
+	// 	return "setmem"
 	default:
 		fatal.Panic("InstKind unknown human representation of error: %d", ik)
 	}

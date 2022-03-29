@@ -8,7 +8,6 @@ import (
 type VMer interface {
 	IP() uint32
 	ProgramSize() uint32
-	Stack() []word.Word
 	StackPush(w word.Word) error
 	SP() uint32
 	StackCap() uint32

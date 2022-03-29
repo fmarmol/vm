@@ -20,13 +20,14 @@ func NewInst(kind InstKind) func(word.Word) Inst {
 
 var (
 	// no operand
-	Start = Inst{Kind: Inst_Start} // start is the entry point
-	Add   = Inst{Kind: Inst_Add}   // add
-	Sub   = Inst{Kind: Inst_Sub}   // substract
-	Mul   = Inst{Kind: Inst_Mul}   // multiply
-	Div   = Inst{Kind: Inst_Div}   // divide
-	Print = Inst{Kind: Inst_Print} // print the value at the top of the stack and consumes it
-	Debug = Inst{Kind: Inst_Debug} // print the value at the top of the stasck without consuming it
+	Start     = Inst{Kind: Inst_Start}     // start is the entry point
+	Add       = Inst{Kind: Inst_Add}       // add
+	Sub       = Inst{Kind: Inst_Sub}       // substract
+	Mul       = Inst{Kind: Inst_Mul}       // multiply
+	Div       = Inst{Kind: Inst_Div}       // divide
+	Print     = Inst{Kind: Inst_Print}     // print the value at the top of the stack and consumes it
+	PrintChar = Inst{Kind: Inst_PrintChar} // print the value at the topc as a ASCII character and consumes it
+	Debug     = Inst{Kind: Inst_Debug}     // print the value at the top of the stasck without consuming it
 
 	Ret   = Inst{Kind: Inst_Ret}   // ret take the value at the top of the stack and assign ip to it. ret is used in functions to return to the caller next instruction
 	Halt  = Inst{Kind: Inst_Halt}  // stop the vm

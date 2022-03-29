@@ -12,6 +12,10 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+func Test() error {
+	return sh.Run("go", "test", "-v", "./pkg/...")
+}
+
 // Runs go mod download and then installs the binary.
 func Build() error {
 	if err := sh.Run("go", "mod", "download"); err != nil {

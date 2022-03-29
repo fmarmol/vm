@@ -1,15 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/fmarmol/basename/pkg/basename"
 	"github.com/fmarmol/vm/pkg/fatal"
-	"github.com/fmarmol/vm/pkg/prog"
 	"github.com/fmarmol/vm/pkg/vm"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -73,45 +70,45 @@ func main() {
 		if err != nil {
 			fatal.Panic("could not read file: %v", err)
 		}
-		p := prog.LoadSourceCode(string(code))
-		v := vm.NewVM(PROGRAM_CAPACITY, p)
+		ivm := vm.LoadSourceCode(string(code))
+		v := vm.NewVM(ivm)
 		path := filepath.Join(fi.Dir, fi.Basename) + ".vm"
 		err = v.WriteToFile(path)
 		if err != nil {
 			panic(err)
 		}
 	case run.FullCommand():
-		p, err := prog.LoadProgram(*sourceRun)
+		vi, err := vm.LoadInnerVM(*sourceRun)
 		if err != nil {
 			panic(err)
 		}
-		v := vm.NewVM(PROGRAM_CAPACITY, p)
+		v := vm.NewVM(*vi)
 		v.Execute(*maxStep)
 	case debug.FullCommand():
-		p, err := prog.LoadProgram(*sourceDebug)
+		vi, err := vm.LoadInnerVM(*sourceDebug)
 		if err != nil {
 			panic(err)
 		}
-		v := vm.NewVM(PROGRAM_CAPACITY, p)
+		v := vm.NewVM(*vi)
 		v.ExecuteWithDebug(*maxStepDebug)
-	case disas.FullCommand():
-		p, err := prog.LoadProgram(*sourceDisas)
-		if err != nil {
-			panic(err)
-		}
-		ps := p.Disas()
-		if outputDisas == nil {
-			for _, inst := range ps {
-				fmt.Println(inst)
-			}
-		} else {
-			fd, err := os.Create(*outputDisas)
-			if err != nil {
-				panic(err)
-			}
-			defer fd.Close()
-			content := strings.Join(ps, "\n")
-			fd.WriteString(content)
-		}
+		// case disas.FullCommand():
+		// 	p, err := prog.LoadProgram(*sourceDisas)
+		// 	if err != nil {
+		// 		panic(err)
+		// 	}
+		// 	ps := p.Disas()
+		// 	if outputDisas == nil {
+		// 		for _, inst := range ps {
+		// 			fmt.Println(inst)
+		// 		}
+		// 	} else {
+		// 		fd, err := os.Create(*outputDisas)
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 		defer fd.Close()
+		// 		content := strings.Join(ps, "\n")
+		// 		fd.WriteString(content)
+		// 	}
 	}
 }

@@ -1,0 +1,16 @@
+__start:
+    pushi 12
+    pushi 0
+loop:
+    memr8 // print addr 0, without consuming
+    swap 2
+    pushi 1
+    sub
+    swap 2
+    pushi 1
+    add
+    jmptrue loop
+    halt
+
+//__mem:
+    setmem 0 "Hello world"
