@@ -58,13 +58,20 @@ func Bin(vm VMer, _inst inst.Inst) error {
 		if err != nil {
 			return err
 		}
-		result = word.NewWord(res, word.Int64)
+		result = word.NewI64(res)
 	case word.Float64:
 		res, err := binaryOp(a.Float64(), b.Float64(), _inst.Kind)
 		if err != nil {
 			return err
 		}
-		result = word.NewWord(res, word.Float64)
+		result = word.NewF64(res)
+	case word.UInt32:
+		res, err := binaryOp(a.UInt32(), b.UInt32(), _inst.Kind)
+		if err != nil {
+			return err
+		}
+		result = word.NewU32(res)
+
 	default:
 		return fmt.Errorf("binary operation not implemented for type: %v", a.Kind)
 	}

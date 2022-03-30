@@ -10,5 +10,5 @@ func Call(vm VMer, _inst inst.Inst) error {
 	if _inst.Operand.UInt32() < 0 || _inst.Operand.UInt32() >= vm.ProgramSize() {
 		return rorre.Err_OutOfIndexInstruction
 	}
-	return vm.StackPush(word.NewWord(vm.IP()+1, word.UInt32))
+	return vm.StackPush(word.NewU32(vm.IP() + 1))
 }

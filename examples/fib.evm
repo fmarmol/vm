@@ -6,6 +6,6 @@ __start:
         dup 2
         dup 2
         add
-        print
+	debug
         jmp loop
         halt

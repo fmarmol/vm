@@ -1,10 +1,10 @@
 __start:
     pushf 20
-    print #print first 
+    debug #print first 
     jmp loop
     loop:
         pushf 0.5
         sub
-        print
+        debug
         jmptrue loop
         halt

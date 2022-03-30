@@ -1,0 +1,22 @@
+// 9
+// 1
+
+
+__start:
+    pushu 0
+    pushi 11
+loop:
+    swap 2
+    memr8 // print addr 0, without consuming
+    swap 2
+    pushi 1
+    sub
+    swap 2
+    pushu 1
+    add
+    swap 2
+    jmptrue loop
+    halt
+
+//__mem:
+    setmem 0 "Hello world"

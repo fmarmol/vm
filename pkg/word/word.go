@@ -53,13 +53,18 @@ func (w Word) IsZero() bool {
 	return w.Value == 0
 }
 
-func NewWord[T ~int64 | ~float64 | ~uint32 | uintptr](i T, kind WordKind) Word {
+func newWord[T ~int64 | ~float64 | ~uint32 | uintptr](i T, kind WordKind) Word {
 	w := Word{
 		Kind:  kind,
 		Value: *(*uint64)(unsafe.Pointer(&i)),
 	}
 	return w
 }
+
+func NewPtr(i uintptr) Word { return newWord(i, Ptr) }
+func NewU32(i uint32) Word  { return newWord(i, UInt32) }
+func NewF64(i float64) Word { return newWord(i, Float64) }
+func NewI64(i int64) Word   { return newWord(i, Int64) }
 
 func (w Word) Float64() float64 {
 	if w.Kind != Float64 {

@@ -1,15 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/fmarmol/basename/pkg/basename"
 	"github.com/fmarmol/vm/pkg/fatal"
-	"github.com/fmarmol/vm/pkg/prog"
 	"github.com/fmarmol/vm/pkg/vm"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -55,6 +52,10 @@ var (
 	sourceRun = run.Arg("source", "source file .vm").String()
 	maxStep   = run.Flag("max_step", "max exection steps allowed").Default("300").Uint()
 
+	debug        = app.Command("debug", "run vm file").Alias("d")
+	sourceDebug  = debug.Arg("source", "source file .vm").String()
+	maxStepDebug = debug.Flag("max_step", "max exection steps allowed").Default("300").Uint()
+
 	disas       = app.Command("disas", "disassemble a program .vm")
 	sourceDisas = disas.Arg("source", "source file .vm").String()
 	outputDisas = disas.Flag("output", "output file .vm.disas").Short('o').String()
@@ -69,38 +70,45 @@ func main() {
 		if err != nil {
 			fatal.Panic("could not read file: %v", err)
 		}
-		p := prog.LoadSourceCode(string(code))
-		v := vm.NewVM(PROGRAM_CAPACITY, p)
+		ivm := vm.LoadSourceCode(string(code))
+		v := vm.NewVM(ivm)
 		path := filepath.Join(fi.Dir, fi.Basename) + ".vm"
 		err = v.WriteToFile(path)
 		if err != nil {
 			panic(err)
 		}
 	case run.FullCommand():
-		p, err := prog.LoadProgram(*sourceRun)
+		vi, err := vm.LoadInnerVM(*sourceRun)
 		if err != nil {
 			panic(err)
 		}
-		v := vm.NewVM(PROGRAM_CAPACITY, p)
+		v := vm.NewVM(*vi)
 		v.Execute(*maxStep)
-	case disas.FullCommand():
-		p, err := prog.LoadProgram(*sourceDisas)
+	case debug.FullCommand():
+		vi, err := vm.LoadInnerVM(*sourceDebug)
 		if err != nil {
 			panic(err)
 		}
-		ps := p.Disas()
-		if outputDisas == nil {
-			for _, inst := range ps {
-				fmt.Println(inst)
-			}
-		} else {
-			fd, err := os.Create(*outputDisas)
-			if err != nil {
-				panic(err)
-			}
-			defer fd.Close()
-			content := strings.Join(ps, "\n")
-			fd.WriteString(content)
-		}
+		v := vm.NewVM(*vi)
+		v.ExecuteWithDebug(*maxStepDebug)
+		// case disas.FullCommand():
+		// 	p, err := prog.LoadProgram(*sourceDisas)
+		// 	if err != nil {
+		// 		panic(err)
+		// 	}
+		// 	ps := p.Disas()
+		// 	if outputDisas == nil {
+		// 		for _, inst := range ps {
+		// 			fmt.Println(inst)
+		// 		}
+		// 	} else {
+		// 		fd, err := os.Create(*outputDisas)
+		// 		if err != nil {
+		// 			panic(err)
+		// 		}
+		// 		defer fd.Close()
+		// 		content := strings.Join(ps, "\n")
+		// 		fd.WriteString(content)
+		// 	}
 	}
 }

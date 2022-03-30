@@ -3,7 +3,9 @@ __start:
     pushi 2
     pushi 3 
     swap 2
-    print
+    eqi 2
+    debug
     drop
-    print
+    eqi 3
+    debug
     halt
