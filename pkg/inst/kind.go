@@ -32,8 +32,10 @@ const (
 	Inst_Com
 	Inst_Alloc
 	// MEM
-	// Inst_SetMem
-	Inst_Count
+	Inst_MemR8
+
+	// Compilation only
+	MemSet
 )
 
 func (ik InstKind) String() string {
@@ -90,6 +92,8 @@ func (ik InstKind) String() string {
 		return "alloc"
 	case Inst_Debug:
 		return "debug"
+	case Inst_MemR8:
+		return "memr8"
 	// case Inst_SetMem:
 	// 	return "setmem"
 	default:

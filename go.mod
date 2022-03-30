@@ -9,6 +9,7 @@ require (
 	github.com/magefile/mage v1.12.1
 	github.com/stretchr/testify v1.7.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
+	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.0.3
 )
 

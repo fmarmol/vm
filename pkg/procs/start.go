@@ -2,6 +2,7 @@ package procs
 
 import (
 	"github.com/fmarmol/vm/pkg/inst"
+	"github.com/fmarmol/vm/pkg/mem"
 	"github.com/fmarmol/vm/pkg/word"
 )
 
@@ -18,6 +19,7 @@ type VMer interface {
 	StackPeek() word.Word                           // return the last elem without removing it
 	StackPeekIndex(index uint32) (word.Word, error) // return the relative index to sp without removing it
 	Swap(first, second uint32) error                // swap first and second index relative to sp (index >=1)
+	Mem() *mem.Memory
 	// Dup(index uint32) error                         // duplicate the index to relative to sp at the top of the stack
 }
 

@@ -1,15 +1,13 @@
 package vm
 
 import (
+	"errors"
 	"regexp"
-	"strings"
 
-	"github.com/fmarmol/regex"
-	"github.com/fmarmol/tuple"
-	"github.com/fmarmol/vm/pkg/fatal"
 	"github.com/fmarmol/vm/pkg/inst"
 	"github.com/fmarmol/vm/pkg/mem"
 	"github.com/fmarmol/vm/pkg/prog"
+	"github.com/fmarmol/vm/pkg/rorre"
 	"github.com/fmarmol/vm/pkg/word"
 )
 
@@ -35,184 +33,66 @@ type Rule struct {
 	re      *regexp.Regexp
 }
 
-func loadRules() []*Rule {
-	var rules = []*Rule{
-		{kind: inst.Inst_Start, pattern: `^(?P<label>__start:)`},
-		{kind: inst.Inst_Com, pattern: `^(?P<com>//.*)`},
-		{kind: inst.Inst_Label, pattern: `^(?P<label>[[:word:]]+):`},
-		{kind: inst.Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:word:]]+)`},
-		{kind: inst.Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:word:]]+)`},
-		{kind: inst.Inst_Call, pattern: `^call\s+(?P<label>[[:word:]]+)`},
-		{kind: inst.Inst_PushUInt32, pattern: `^pushu\s+(?P<operand>\d+)`},
-		{kind: inst.Inst_PushInt, pattern: `^pushi\s+(?P<operand>[-+]?\d+)`},
-		{kind: inst.Inst_PushFloat, pattern: `^pushf\s+(?P<operand>[-+]?[0-9]+.[0-9]*)`},
-		{kind: inst.Inst_Dup, pattern: `^dup\s+(?P<operand>\d+)`},
-		{kind: inst.Inst_Swap, pattern: `^swap\s+(?P<operand>\d+)`},
-		{kind: inst.Inst_EqFloat, pattern: `^eqf\s+(?P<operand>[-+]?[0-9]+.[0-9]*)`},
-		{kind: inst.Inst_EqInt, pattern: `^eqi\s+(?P<operand>[-+]?\d+)`},
-		{kind: inst.Inst_Drop, pattern: `^(?P<inst>drop)`},
-		{kind: inst.Inst_Add, pattern: `^(?P<inst>add)`},
-		{kind: inst.Inst_Sub, pattern: `^(?P<inst>sub)`},
-		{kind: inst.Inst_Print, pattern: `^(?P<inst>print)`},
-		{kind: inst.Inst_PrintChar, pattern: `^(?P<inst>printc)`},
-		{kind: inst.Inst_Debug, pattern: `^(?P<inst>debug)`},
-		{kind: inst.Inst_Ret, pattern: `^(?P<inst>ret)`},
-		{kind: inst.Inst_Halt, pattern: `^(?P<inst>halt)`},
-		{kind: inst.Inst_Alloc, pattern: `^(?P<inst>alloc)`},
-		{kind: inst.Inst_Dump, pattern: `^(?P<inst>dump)`},
-		{kind: inst.MemSet, pattern: `^setmem\s+(?P<addr>\d+)\s+"(?P<str>[[:word:]]+)"`},
+func (v *VM) Mem() *mem.Memory    { return &v.Memory }
+func (v *VM) IP() uint32          { return v.ip }
+func (v *VM) ProgramSize() uint32 { return v.Program.Size() }
+func (v *VM) SP() uint32          { return v.sp }
+func (v *VM) StackCap() uint32    { return uint32(len(v.Stack)) }
+func (v *VM) StackPush(w word.Word) error {
+	if v.sp >= v.StackCap() {
+		return rorre.Err_Overflow
 	}
-	for _, r := range rules {
-		r.re = regexp.MustCompile(r.pattern)
-	}
-	return rules
-
+	v.Stack[v.sp] = w
+	v.sp++
+	return nil
 }
 
-func LoadSourceCode(code string) InnerVM {
-	labels := map[string]uint32{} // label: instruction position
+func (v *VM) Stop() {
+	v.stop = true
+}
 
-	instsToResolve := []tuple.Tuple2[string, uint]{}
-
-	var p prog.Program
-
-	lines := strings.Split(code, "\n")
-	lines = func() (ret []string) {
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if len(line) == 0 {
-				continue
-			}
-			ret = append(ret, line)
-		}
-		return
-	}()
-
-	var m mem.Memory
-
-	var ip uint32
-	var foundStart bool
-	var foundStop bool
-	var i int
-
-LINE:
-	for _, line := range lines {
-		var newInst inst.Inst
-		var found bool
-		for _, rule := range loadRules() {
-			groups := regex.FindGroups(rule.re, line)
-			if len(groups) == 0 {
-				continue
-			}
-			found = true
-			switch rule.kind {
-			case inst.Inst_Com:
-				ip++
-				continue LINE
-			case inst.Inst_Start:
-				foundStart = true
-				newInst = inst.Start
-			case inst.Inst_Label:
-				label := groups.MustGet("label")
-
-				_, ok := labels[label]
-				if ok {
-					fatal.Panic("label %v already defined", label)
-				}
-				labels[label] = ip
-				newInst = inst.Label(word.NewU32(ip))
-			case inst.Inst_PushInt:
-				op := groups.MustGetAsInt("operand")
-				newInst = inst.PushInt(word.NewI64(int64(op)))
-			case inst.Inst_PushFloat:
-				op := groups.MustGetAsFloat("operand")
-				newInst = inst.PushFloat(word.NewF64(op))
-			case inst.Inst_PushUInt32:
-				op := groups.MustGetAsInt("operand")
-				newInst = inst.PushUInt32(word.NewU32(uint32(op)))
-			case inst.Inst_EqInt:
-				op := groups.MustGetAsInt("operand")
-				newInst = inst.EqInt(word.NewI64(int64(op)))
-			case inst.Inst_EqFloat:
-				op := groups.MustGetAsFloat("operand")
-				newInst = inst.EqFloat(word.NewF64(op))
-			case inst.Inst_Dup:
-				op := groups.MustGetAsInt("operand")
-				newInst = inst.Dup(word.NewU32(uint32(op)))
-			case inst.Inst_Jmp:
-				label := groups.MustGet("label")
-
-				addr, ok := labels[label]
-				if !ok {
-					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(i)))
-				}
-				newInst = inst.Jmp(word.NewU32(addr))
-			case inst.Inst_JmpTrue:
-				label := groups.MustGet("label")
-
-				addr, ok := labels[label]
-				if !ok {
-					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(i)))
-				}
-				newInst = inst.JmpTrue(word.NewU32(addr))
-			case inst.Inst_Call:
-				label := groups.MustGet("label")
-
-				addr, ok := labels[label]
-				if !ok {
-					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(i)))
-				}
-				newInst = inst.Call(word.NewU32(addr))
-			case inst.Inst_Swap:
-				idx := groups.MustGetAsInt("operand")
-				newInst = inst.Swap(word.NewU32(uint32(idx)))
-			case inst.Inst_Drop:
-				newInst = inst.Drop
-			case inst.Inst_Add:
-				newInst = inst.Add
-			case inst.Inst_Sub:
-				newInst = inst.Sub
-			case inst.Inst_Ret:
-				newInst = inst.Ret
-			case inst.Inst_Halt:
-				newInst = inst.Halt
-				foundStop = true
-			case inst.Inst_Print:
-				newInst = inst.Print
-			case inst.Inst_Debug:
-				newInst = inst.Debug
-			case inst.Inst_Alloc:
-				newInst = inst.Alloc
-			case inst.Inst_Dump:
-				newInst = inst.Dump
-			default:
-				fatal.Panic("Unkwon instruction line: %v", line)
-			}
-			if newInst.Kind == 0 {
-				fatal.Panic("empty instruction")
-			}
-			p[i] = newInst
-			i++
-			ip++
-			continue LINE
-		}
-		if !found {
-			fatal.Panic("could not parse line: %v", line)
-		}
+func (v *VM) Swap(first, second uint32) error {
+	if first < 1 {
+		return errors.New("first index must be greater or equal to 1, its relative index. stack[sp-first]")
 	}
-	if !foundStart {
-		fatal.Panic("no entry point __start: found")
+	if v.sp-first < 0 {
+		return errors.New("tried to acces negative index from the stack. stack[sp-first]")
 	}
-	if !foundStop {
-		fatal.Panic("no halt found")
+	if second < 1 {
+		return errors.New("second index must be greater or equal to 1, its relative index. stack[sp-second]")
 	}
+	if v.sp-second < 0 {
+		return errors.New("tried to acces negative index from the stack. stack[sp-second]")
+	}
+	v.Stack[v.sp-first], v.Stack[v.sp-second] = v.Stack[v.sp-second], v.Stack[v.sp-first]
+	return nil
+}
 
-	for _, inst := range instsToResolve {
-		res, ok := labels[inst.First]
-		if !ok {
-			fatal.Panic("Label %q is not defined", inst.First)
-		}
-		p[inst.Second].Operand = word.NewU32(res)
+func (v *VM) stackTop() word.Word {
+	return v.Stack[v.sp-1]
+}
+
+func (v *VM) StackPeek() word.Word {
+	if v.sp-1 < 0 {
+		panic("need to implement proper error management")
 	}
-	return InnerVM{Program: p, Memory: m}
+	return v.Stack[v.sp-1]
+}
+
+func (v *VM) StackPeekIndex(index uint32) (word.Word, error) {
+	if v.sp-index < 0 {
+		return word.Word{}, errors.New("need to implement proper error management")
+	}
+	return v.Stack[v.sp-index], nil
+}
+
+func (v *VM) StackPop() (word.Word, error) {
+	if v.sp < 1 {
+		return word.Word{}, rorre.Err_Underflow
+	}
+	top := v.StackPeek()
+	v.Stack[v.sp-1] = word.Word{}
+	v.sp--
+	return top, nil
+
 }

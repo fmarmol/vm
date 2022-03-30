@@ -1,7 +1,11 @@
 # vm
 
-## install task
+## install mage
 
 ```
-go install github.com/go-task/task/v3/cmd/task@latest
+git clone https://github.com/magefile/mage
+cd mage
+go run bootstrap.go
+cd ..
+rm -rf mage
 ```
