@@ -1,9 +1,9 @@
 __start:
-    pushi 10
+    push 10
     debug #print first 
     jmp loop
 loop:
-    pushi 1
+    push 1
     sub
     debug
     jmptrue loop

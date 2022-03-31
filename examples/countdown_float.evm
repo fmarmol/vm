@@ -1,9 +1,9 @@
 __start:
-    pushf 20
+    push 20.0
     debug #print first 
     jmp loop
     loop:
-        pushf 0.5
+        push 0.5
         sub
         debug
         jmptrue loop

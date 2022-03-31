@@ -1,7 +1,9 @@
 package vm
 
 import (
+	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/fmarmol/regex"
@@ -14,6 +16,56 @@ import (
 )
 
 const MemSetPattern = `^setmem\s+(?P<addr>\d+)\s+"(?P<str>[^"]*)"`
+const PushPattern = `^push\s+(?P<operand>[^\[]+)(\[(?P<type>(i64|u32|f64))\])?`
+
+func parsePush(statement string, groups regex.Groups) (inst.Inst, error) {
+	operand := groups.MustGet("operand")
+	kind, ok := groups.Get("type")
+
+	if !ok {
+		{
+			res, err := strconv.ParseInt(operand, 10, 64)
+			if err == nil {
+				return inst.PushInt(word.NewI64(res)), nil
+			}
+		}
+		{
+			res, err := strconv.ParseFloat(operand, 64)
+			if err == nil {
+				return inst.PushFloat(word.NewF64(res)), nil
+			}
+
+		}
+	} else {
+		switch kind {
+		case "i64":
+			res, err := strconv.ParseInt(operand, 10, 64)
+			if err == nil {
+				return inst.PushInt(word.NewI64(res)), nil
+			} else {
+				return inst.Inst{}, fmt.Errorf("could not convert [%v] into i64: %v", operand, err)
+			}
+		case "u32":
+			res, err := strconv.ParseUint(operand, 10, 32)
+			if err == nil {
+				return inst.PushUInt32(word.NewU32(uint32(res))), nil
+			} else {
+				return inst.Inst{}, fmt.Errorf("could not convert [%v] into u32: %v", operand, err)
+			}
+		case "f64":
+			res, err := strconv.ParseFloat(operand, 64)
+			if err == nil {
+				return inst.PushFloat(word.NewF64(res)), nil
+			} else {
+				return inst.Inst{}, fmt.Errorf("could not convert [%v] into f64: %v", operand, err)
+			}
+		default:
+			return inst.Inst{}, fmt.Errorf("could not parse push because unknown type: %v", kind)
+
+		}
+	}
+	return inst.Inst{}, fmt.Errorf("could not parse push statement: %q", statement)
+}
 
 func loadRules() []*Rule {
 	var rules = []*Rule{
@@ -23,6 +75,7 @@ func loadRules() []*Rule {
 		{kind: inst.Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:word:]]+)`},
 		{kind: inst.Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:word:]]+)`},
 		{kind: inst.Inst_Call, pattern: `^call\s+(?P<label>[[:word:]]+)`},
+		{kind: inst.Inst_Push, pattern: PushPattern}, // default value is i64 and f64
 		{kind: inst.Inst_PushUInt32, pattern: `^pushu\s+(?P<operand>\d+)`},
 		{kind: inst.Inst_PushInt, pattern: `^pushi\s+(?P<operand>[-+]?\d+)`},
 		{kind: inst.Inst_PushFloat, pattern: `^pushf\s+(?P<operand>[-+]?[0-9]+.[0-9]*)`},
@@ -47,7 +100,6 @@ func loadRules() []*Rule {
 		r.re = regexp.MustCompile(r.pattern)
 	}
 	return rules
-
 }
 
 func LoadSourceCode(code string) InnerVM {
@@ -101,15 +153,12 @@ LINE:
 				}
 				labels[label] = ip
 				newInst = inst.Label(word.NewU32(ip))
-			case inst.Inst_PushInt:
-				op := groups.MustGetAsInt("operand")
-				newInst = inst.PushInt(word.NewI64(int64(op)))
-			case inst.Inst_PushFloat:
-				op := groups.MustGetAsFloat("operand")
-				newInst = inst.PushFloat(word.NewF64(op))
-			case inst.Inst_PushUInt32:
-				op := groups.MustGetAsInt("operand")
-				newInst = inst.PushUInt32(word.NewU32(uint32(op)))
+			case inst.Inst_Push:
+				_inst, err := parsePush(line, groups) // TODO: This function's signature is weird
+				if err != nil {
+					panic(err)
+				}
+				newInst = _inst
 			case inst.Inst_EqInt:
 				op := groups.MustGetAsInt("operand")
 				newInst = inst.EqInt(word.NewI64(int64(op)))

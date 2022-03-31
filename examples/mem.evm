@@ -3,16 +3,16 @@
 
 
 __start:
-    pushu 0
-    pushi 11
+    push 0[u32]
+    push 11
 loop:
     swap 2
     memr8 // print addr 0, without consuming
     swap 2
-    pushi 1
+    push 1
     sub
     swap 2
-    pushu 1
+    push 1[u32]
     add
     swap 2
     jmptrue loop
