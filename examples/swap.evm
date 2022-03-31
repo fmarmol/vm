@@ -1,7 +1,7 @@
 __start:
-    pushi 1
-    pushi 2
-    pushi 3 
+    push 1
+    push 2
+    push 3 
     swap 2
     eqi 2
     debug

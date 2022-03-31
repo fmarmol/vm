@@ -55,6 +55,18 @@ var (
 func (i Inst) String() string {
 	switch i.Kind {
 	// operand
+	case Inst_Push:
+		switch i.Operand.Kind {
+		case word.Int64:
+			return fmt.Sprintf("%v %v[%s]", i.Kind, i.Operand.Int64(), "i64")
+		case word.UInt32:
+			return fmt.Sprintf("%v %v[%s]", i.Kind, i.Operand.UInt32(), "u32")
+		case word.Float64:
+			return fmt.Sprintf("%v %v[%s]", i.Kind, i.Operand.Float64(), "f64")
+		default:
+			fatal.Panic("unknown type for push: %v", i.Operand.Kind)
+
+		}
 	case Inst_PushInt, Inst_PushFloat, Inst_Jmp, Inst_JmpTrue, Inst_Dup, Inst_Label, Inst_Call, Inst_Swap, Inst_EqInt, Inst_EqFloat, Inst_PushUInt32:
 		return fmt.Sprintf("%v %v", i.Kind, i.Operand)
 	// no operand

@@ -1,7 +1,7 @@
 // fibonnaci suite
 __start:
-    pushi 0
-    pushi 1
+    push 0
+    push 1
     loop:
         dup 2
         dup 2

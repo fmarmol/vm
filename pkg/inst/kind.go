@@ -5,7 +5,8 @@ import "github.com/fmarmol/vm/pkg/fatal"
 type InstKind uint32
 
 const (
-	Inst_PushInt InstKind = iota + 1 // default value 0 should not be valid to easier debug life
+	Inst_PushInt InstKind = iota + 1 // default value 0 should not be valid for easier debug life
+	Inst_Push
 	Inst_PushFloat
 	Inst_PushUInt32
 	Inst_EqInt
@@ -42,6 +43,8 @@ func (ik InstKind) String() string {
 	switch ik {
 	case Inst_Dump:
 		return "dump"
+	case Inst_Push:
+		return "push"
 	case Inst_PushInt:
 		return "pushi"
 	case Inst_PushFloat:

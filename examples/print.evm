@@ -1,4 +1,4 @@
 __start:
-    pushf -3.0
+    push -3.0
     print
     halt
