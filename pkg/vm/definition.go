@@ -19,7 +19,13 @@ type VM struct {
 	sp    uint32 // stack pointer
 	ip    uint32 // instruction pointer
 	stop  bool
+	MetaInnerVM
 	InnerVM
+}
+
+type MetaInnerVM struct {
+	MemorySize  uint16
+	ProgramSize uint16
 }
 
 type InnerVM struct {

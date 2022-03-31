@@ -4,7 +4,7 @@ import "github.com/fmarmol/vm/pkg/inst"
 
 const PROG_CAPACITY = 1024
 
-type Program [PROG_CAPACITY]inst.Inst
+type Program []inst.Inst
 
 func (p *Program) Size() uint32 {
 	return uint32(len(*p))

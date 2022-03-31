@@ -95,6 +95,7 @@ func loadRules() []*Rule {
 		{kind: inst.Inst_Dump, pattern: `^(?P<inst>dump)`},
 		{kind: inst.MemSet, pattern: MemSetPattern},
 		{kind: inst.Inst_MemR8, pattern: `^(?P<inst>memr8)`},
+		{kind: inst.Inst_DisplayStr, pattern: `^x\\str\s+$(?P<variable>[[:word:]]+)`},
 	}
 	for _, r := range rules {
 		r.re = regexp.MustCompile(r.pattern)
@@ -102,8 +103,15 @@ func loadRules() []*Rule {
 	return rules
 }
 
+type Variable[T any] struct {
+	ptr   uint32
+	size  uint64
+	value T
+}
+
 func LoadSourceCode(code string) InnerVM {
 	labels := map[string]uint32{} // label: instruction position
+	variable := map[string]Variable{}
 
 	instsToResolve := []tuple.Tuple2[string, uint]{}
 
@@ -218,6 +226,9 @@ LINE:
 				addr := groups.MustGetAsInt("addr")
 				str := groups.MustGet("str")
 				for index := 0; index < len(str); index++ {
+					if addr+index > len(m)-1 {
+						cop
+					}
 					m.Write8(str[index], uint32(addr+index))
 				}
 				ip++
@@ -231,7 +242,7 @@ LINE:
 			if newInst.Kind == 0 {
 				fatal.Panic("empty instruction")
 			}
-			p[ip] = newInst
+			p = append(p, newInst)
 			ip++
 			continue LINE
 		}

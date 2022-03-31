@@ -73,23 +73,36 @@ func main() {
 		ivm := vm.LoadSourceCode(string(code))
 		v := vm.NewVM(ivm)
 		path := filepath.Join(fi.Dir, fi.Basename) + ".vm"
-		err = v.WriteToFile(path)
+		fd, err := os.Create(path)
+		if err != nil {
+			panic(err)
+		}
+		defer fd.Close()
+		err = v.WriteToFile(fd)
 		if err != nil {
 			panic(err)
 		}
 	case run.FullCommand():
-		vi, err := vm.LoadInnerVM(*sourceRun)
+		fd, err := os.Open(*sourceRun)
 		if err != nil {
 			panic(err)
 		}
-		v := vm.NewVM(*vi)
+		defer fd.Close()
+		v, err := vm.LoadVM(fd)
+		if err != nil {
+			panic(err)
+		}
 		v.Execute(*maxStep)
 	case debug.FullCommand():
-		vi, err := vm.LoadInnerVM(*sourceDebug)
+		fd, err := os.Open(*sourceRun)
 		if err != nil {
 			panic(err)
 		}
-		v := vm.NewVM(*vi)
+		defer fd.Close()
+		v, err := vm.LoadVM(fd)
+		if err != nil {
+			panic(err)
+		}
 		v.ExecuteWithDebug(*maxStepDebug)
 		// case disas.FullCommand():
 		// 	p, err := prog.LoadProgram(*sourceDisas)

@@ -3,21 +3,32 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
-	"os"
+	"io"
 )
 
-func LoadInnerVM(pathFile string) (*InnerVM, error) {
-	fd, err := os.Open(pathFile)
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
+func LoadVM(r io.Reader) (*VM, error) {
+	var metaInnerVM MetaInnerVM
 
-	var v InnerVM
-
-	err = binary.Read(fd, binary.BigEndian, &v)
+	err := binary.Read(r, binary.BigEndian, &metaInnerVM)
 	if err != nil {
-		return nil, fmt.Errorf("could load file: %v: %w", pathFile, err)
+		return nil, fmt.Errorf("could load metadata: %w", err)
 	}
-	return &v, nil
+
+	var innerVM InnerVM
+	// read memory
+	err = binary.Read(r, binary.BigEndian, &innerVM.Memory)
+	if err != nil {
+		return nil, fmt.Errorf("could load memory: %w", err)
+	}
+
+	// read program
+	err = binary.Read(r, binary.BigEndian, &innerVM.Program)
+	if err != nil {
+		return nil, fmt.Errorf("could load program: %w", err)
+	}
+
+	return &VM{
+		InnerVM:     innerVM,
+		MetaInnerVM: metaInnerVM,
+	}, nil
 }
