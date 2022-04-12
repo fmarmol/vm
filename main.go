@@ -78,7 +78,7 @@ func main() {
 			panic(err)
 		}
 		defer fd.Close()
-		err = v.WriteToFile(fd)
+		err = v.Write(fd)
 		if err != nil {
 			panic(err)
 		}
@@ -88,7 +88,7 @@ func main() {
 			panic(err)
 		}
 		defer fd.Close()
-		v, err := vm.LoadVM(fd)
+		v, err := vm.Load(fd)
 		if err != nil {
 			panic(err)
 		}
@@ -99,7 +99,7 @@ func main() {
 			panic(err)
 		}
 		defer fd.Close()
-		v, err := vm.LoadVM(fd)
+		v, err := vm.Load(fd)
 		if err != nil {
 			panic(err)
 		}

@@ -24,8 +24,8 @@ type VM struct {
 }
 
 type MetaInnerVM struct {
-	MemorySize  uint16
-	ProgramSize uint16
+	MemorySize  uint32
+	ProgramSize uint32
 }
 
 type InnerVM struct {
@@ -39,9 +39,10 @@ type Rule struct {
 	re      *regexp.Regexp
 }
 
-func (v *VM) Mem() *mem.Memory    { return &v.Memory }
-func (v *VM) IP() uint32          { return v.ip }
-func (v *VM) ProgramSize() uint32 { return v.Program.Size() }
+func (v *VM) Mem() *mem.Memory { return &v.Memory }
+func (v *VM) IP() uint32       { return v.ip }
+
+func (v *VM) ProgramSize() uint32 { return v.MetaInnerVM.ProgramSize }
 func (v *VM) SP() uint32          { return v.sp }
 func (v *VM) StackCap() uint32    { return uint32(len(v.Stack)) }
 func (v *VM) StackPush(w word.Word) error {
