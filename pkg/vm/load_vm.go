@@ -3,21 +3,46 @@ package vm
 import (
 	"encoding/binary"
 	"fmt"
-	"os"
+	"io"
+
+	"github.com/fmarmol/vm/pkg/mem"
+	"github.com/fmarmol/vm/pkg/prog"
 )
 
-func LoadInnerVM(pathFile string) (*InnerVM, error) {
-	fd, err := os.Open(pathFile)
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
+func Load(r io.Reader) (*VM, error) {
+	var metaInnerVM MetaInnerVM
 
-	var v InnerVM
-
-	err = binary.Read(fd, binary.BigEndian, &v)
+	err := binary.Read(r, binary.BigEndian, &metaInnerVM)
 	if err != nil {
-		return nil, fmt.Errorf("could load file: %v: %w", pathFile, err)
+		return nil, fmt.Errorf("could not load metadata: %w", err)
 	}
-	return &v, nil
+
+	var innerVM InnerVM
+
+	innerVM.Memory = make(
+		mem.Memory,
+		metaInnerVM.MemorySize,
+		metaInnerVM.MemorySize,
+	)
+	// read memory
+	err = binary.Read(r, binary.BigEndian, &innerVM.Memory)
+	if err != nil {
+		return nil, fmt.Errorf("could not load memory: %w", err)
+	}
+
+	innerVM.Program = make(
+		prog.Program,
+		metaInnerVM.ProgramSize,
+		metaInnerVM.ProgramSize,
+	)
+	// read program
+	err = binary.Read(r, binary.BigEndian, &innerVM.Program)
+	if err != nil {
+		return nil, fmt.Errorf("could not load program: %w", err)
+	}
+
+	return &VM{
+		InnerVM:     innerVM,
+		MetaInnerVM: metaInnerVM,
+	}, nil
 }

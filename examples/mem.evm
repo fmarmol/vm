@@ -5,18 +5,19 @@
 __start:
     push 0[u32]
     push 11
-loop:
-    swap 2
-    memr8 // print addr 0, without consuming
-    swap 2
-    push 1
-    sub
-    swap 2
-    push 1[u32]
-    add
-    swap 2
-    jmptrue loop
+//loop:
+//    swap 2
+//    memr8 // print addr 0, without consuming
+//    swap 2
+//    push 1
+//    sub
+//    swap 2
+//    push 1[u32]
+//    add
+//    swap 2
+//    jmptrue loop
     halt
 
 //__mem:
-    setmem 0 "Hello world"
+//    set msg "hello world"
+//    setmem 0 "Hello world"

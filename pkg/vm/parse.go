@@ -102,6 +102,12 @@ func loadRules() []*Rule {
 	return rules
 }
 
+type Variable[T any] struct {
+	ptr   uint32
+	size  uint64
+	value T
+}
+
 func LoadSourceCode(code string) InnerVM {
 	labels := map[string]uint32{} // label: instruction position
 
@@ -215,13 +221,16 @@ LINE:
 				newInst = inst.Dump
 			case inst.MemSet:
 				// TODO: MANAGE SPECIAL CARACTERS
-				addr := groups.MustGetAsInt("addr")
-				str := groups.MustGet("str")
-				for index := 0; index < len(str); index++ {
-					m.Write8(str[index], uint32(addr+index))
-				}
-				ip++
-				continue LINE
+				// addr := groups.MustGetAsInt("addr")
+				// str := groups.MustGet("str")
+				// for index := 0; index < len(str); index++ {
+				// 	if addr+index > len(m)-1 {
+				// 		cop
+				// 	}
+				// 	m.Write8(str[index], uint32(addr+index))
+				// }
+				// ip++
+				// continue LINE
 			case inst.Inst_MemR8:
 				newInst = inst.MemR8
 
@@ -231,7 +240,7 @@ LINE:
 			if newInst.Kind == 0 {
 				fatal.Panic("empty instruction")
 			}
-			p[ip] = newInst
+			p = append(p, newInst)
 			ip++
 			continue LINE
 		}

@@ -2,14 +2,29 @@ package vm
 
 import (
 	"encoding/binary"
-	"os"
+	"io"
 )
 
-func (v InnerVM) WriteToFile(pathFile string) error {
-	fd, err := os.Create(pathFile)
+func (v *VM) Write(w io.Writer) error {
+	v.MetaInnerVM.MemorySize = uint32(len(v.InnerVM.Memory))
+	v.MetaInnerVM.ProgramSize = uint32(len(v.InnerVM.Program))
+
+	err := binary.Write(w, binary.BigEndian, v.MetaInnerVM)
 	if err != nil {
 		return err
 	}
-	defer fd.Close()
-	return binary.Write(fd, binary.BigEndian, v)
+
+	// write mem
+	err = binary.Write(w, binary.BigEndian, v.Memory)
+	if err != nil {
+		return err
+	}
+
+	// write program second
+	err = binary.Write(w, binary.BigEndian, v.Program)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
