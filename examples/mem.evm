@@ -1,23 +1,11 @@
-// 9
-// 1
+// read-only
 
+var msg str = "Hello World" // -> 1. save the label and value
+                            //    2. write the value into the memory and store the start addr
+// execution 
 
 __start:
-    push 0[u32]
-    push 11
-//loop:
-//    swap 2
-//    memr8 // print addr 0, without consuming
-//    swap 2
-//    push 1
-//    sub
-//    swap 2
-//    push 1[u32]
-//    add
-//    swap 2
-//    jmptrue loop
+    push len(MSG) // --> convert into push 11
+    push &MSG     // --> convert int push 0[ptr]
+    puts          // --> will read 11 byte starting at addr 0 in memory
     halt
-
-//__mem:
-//    set msg "hello world"
-//    setmem 0 "Hello world"
