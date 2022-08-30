@@ -68,7 +68,7 @@ func parseVar(vars *Vars, groups regex.Groups) error {
 			return fmt.Errorf("could not convert [%v] into str: %v", value, err)
 		}
 	default:
-		return fmt.Errorf("could not parse push because unknown type: %v", _type)
+		return fmt.Errorf("could not parse var because unknown type: %v", _type)
 	}
 	return nil
 }

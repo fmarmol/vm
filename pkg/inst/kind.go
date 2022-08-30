@@ -34,7 +34,7 @@ const (
 	Inst_Alloc
 	// MEM
 	Inst_MemR8
-
+	Inst_Var
 	// Compilation only
 	MemSet
 )
@@ -97,8 +97,10 @@ func (ik InstKind) String() string {
 		return "debug"
 	case Inst_MemR8:
 		return "memr8"
-	// case Inst_SetMem:
-	// 	return "setmem"
+	case Inst_Var:
+		return "var"
+	case MemSet:
+		return "memset"
 	default:
 		fatal.Panic("InstKind unknown human representation of error: %d", ik)
 	}

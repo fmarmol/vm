@@ -45,6 +45,7 @@ func loadRules() []*Rule {
 		{kind: inst.Inst_Dump, pattern: `^(?P<inst>dump)`},
 		{kind: inst.MemSet, pattern: MemSetPattern},
 		{kind: inst.Inst_MemR8, pattern: `^(?P<inst>memr8)`},
+		{kind: inst.Inst_Var, pattern: VarDeclaration},
 	}
 	for _, r := range rules {
 		r.re = regexp.MustCompile(r.pattern)
@@ -63,6 +64,7 @@ func LoadSourceCode(code string) InnerVM {
 	labels := map[string]uint32{} // label: instruction position
 
 	instsToResolve := []tuple.Tuple2[string, uint]{}
+	vars := NewVars()
 
 	var p prog.Program
 
@@ -184,9 +186,14 @@ LINE:
 				// continue LINE
 			case inst.Inst_MemR8:
 				newInst = inst.MemR8
-
+			case inst.Inst_Var:
+				err := parseVar(vars, groups)
+				if err != nil {
+					fatal.Panic("could not parse var: %v\n", err)
+				}
+				continue LINE
 			default:
-				fatal.Panic("Unkwon instruction line: %v", line)
+				fatal.Panic("Unkwon instruction line: %q", line)
 			}
 			if newInst.Kind == 0 {
 				fatal.Panic("empty instruction")

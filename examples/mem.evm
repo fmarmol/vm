@@ -1,7 +1,8 @@
 // read-only
-
-var msg str = "Hello World" // -> 1. save the label and value
-                            //    2. write the value into the memory and store the start addr
+// -> 1. save the label and
+//    2. write the value into the memory and store the start addr value
+var msg str = "Hello world"
+                            
 // execution 
 
 __start:
