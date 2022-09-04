@@ -43,6 +43,7 @@ var (
 	PushUInt32 = NewInst(Inst_PushUInt32) // push uint32 at the top of the stack
 	Jmp        = NewInst(Inst_Jmp)        // Jmp at a position of the program
 	JmpTrue    = NewInst(Inst_JmpTrue)    // Jump if top value of the stack != 0 at the position of the program
+	JmpFalse   = NewInst(Inst_JmpFalse)   // Jump if top value of the stack == 0 at the position of the program
 	Call       = NewInst(Inst_Call)       // call function
 	Dup        = NewInst(Inst_Dup)        // Duplicate the value at the relative position in stack at the top of the stack
 	Label      = NewInst(Inst_Label)      // label
@@ -67,7 +68,7 @@ func (i Inst) String() string {
 			fatal.Panic("unknown type for push: %v", i.Operand.Kind)
 
 		}
-	case Inst_PushInt, Inst_PushFloat, Inst_Jmp, Inst_JmpTrue, Inst_Dup, Inst_Label, Inst_Call, Inst_Swap, Inst_EqInt, Inst_EqFloat, Inst_PushUInt32:
+	case Inst_PushInt, Inst_PushFloat, Inst_Jmp, Inst_JmpTrue, Inst_JmpFalse, Inst_Dup, Inst_Label, Inst_Call, Inst_Swap, Inst_EqInt, Inst_EqFloat, Inst_PushUInt32:
 		return fmt.Sprintf("%v %v", i.Kind, i.Operand)
 	// no operand
 	case Inst_Debug, Inst_Add, Inst_Halt, Inst_Sub, Inst_Mul, Inst_Div, Inst_Print, Inst_Drop, Inst_Ret, Inst_Start, Inst_Alloc, Inst_Dump, Inst_MemR8:

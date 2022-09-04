@@ -123,6 +123,14 @@ func jmpTrueIp(ipExec *IpExec) {
 	}
 
 }
+func jmpFalseIp(ipExec *IpExec) {
+	if ipExec.vm.StackPeek().IsZero() {
+		ipExec.vm.ip = ipExec._inst.Operand.UInt32()
+	} else {
+		ipExec.vm.ip++
+	}
+
+}
 
 // TODO: check ip boundaries
 func callIp(ipExec *IpExec) {
@@ -171,6 +179,7 @@ func loadRulesProcs() map[inst.InstKind]ProcExec {
 		inst.Inst_Call:       {procs.Call, callIp},
 		inst.Inst_Jmp:        {procs.Nop, jmpIp},
 		inst.Inst_JmpTrue:    {procs.Nop, jmpTrueIp},
+		inst.Inst_JmpFalse:   {procs.Nop, jmpFalseIp},
 		inst.Inst_Dup:        {procs.Dup, incIp},
 		inst.Inst_Print:      {procs.Print, incIp},
 		inst.Inst_PrintChar:  {procs.PrintChar, incIp},

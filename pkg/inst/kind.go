@@ -21,6 +21,7 @@ const (
 	Inst_Call
 	Inst_Jmp
 	Inst_JmpTrue
+	Inst_JmpFalse
 	Inst_Dup
 	Inst_Swap
 	Inst_Drop
@@ -69,6 +70,8 @@ func (ik InstKind) String() string {
 		return "call"
 	case Inst_JmpTrue:
 		return "jmptrue"
+	case Inst_JmpFalse:
+		return "jmpfalse"
 	case Inst_Dup:
 		return "dup"
 	case Inst_Swap:

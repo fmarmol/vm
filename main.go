@@ -94,7 +94,7 @@ func main() {
 		}
 		v.Execute(*maxStep)
 	case debug.FullCommand():
-		fd, err := os.Open(*sourceRun)
+		fd, err := os.Open(*sourceDebug)
 		if err != nil {
 			panic(err)
 		}

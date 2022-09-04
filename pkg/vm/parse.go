@@ -23,6 +23,7 @@ func loadRules() []*Rule {
 		{kind: inst.Inst_Com, pattern: `^(?P<com>//.*)`},
 		{kind: inst.Inst_Label, pattern: `^(?P<label>[[:word:]]+):`},
 		{kind: inst.Inst_JmpTrue, pattern: `^jmptrue\s+(?P<label>[[:word:]]+)`},
+		{kind: inst.Inst_JmpFalse, pattern: `^jmpfalse\s+(?P<label>[[:word:]]+)`},
 		{kind: inst.Inst_Jmp, pattern: `^jmp\s+(?P<label>[[:word:]]+)`},
 		{kind: inst.Inst_Call, pattern: `^call\s+(?P<label>[[:word:]]+)`},
 		{kind: inst.Inst_Push, pattern: PushPattern}, // default value is i64 and f64
@@ -142,6 +143,14 @@ LINE:
 					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(ip)))
 				}
 				newInst = inst.JmpTrue(word.NewU32(addr))
+			case inst.Inst_JmpFalse:
+				label := groups.MustGet("label")
+
+				addr, ok := labels[label]
+				if !ok {
+					instsToResolve = append(instsToResolve, tuple.NewTuple2(label, uint(ip)))
+				}
+				newInst = inst.JmpFalse(word.NewU32(addr))
 			case inst.Inst_Call:
 				label := groups.MustGet("label")
 
